@@ -27,7 +27,6 @@ jobs:
 
       - run: |
           flutter create --platforms=web --project-name mafia_uz .
-          rm -rf test
 
       - run: flutter pub get
 
