@@ -996,10 +996,7 @@ class _GamePageState extends State<GamePage> {
 
   Widget _head(IconData icon, Color color, String title, String sub,
           {bool timerOn = false}) =>
-      Column(children: [
-        _gameHeader(),
-        _phaseBanner(icon: icon, title: title, sub: sub, color: color),
-      ]);
+      _phaseBanner(icon: icon, title: title, sub: sub, color: color);
 
   String _lbl(Player p, bool roles) {
     final s = '№${players.indexOf(p) + 1} ${p.name}';
@@ -1273,6 +1270,12 @@ class _GamePageState extends State<GamePage> {
         ),
         child: Stack(
           children: [
+            if (stage != Stage.setup && stage != Stage.reveal)
+              Positioned(
+                top: 6,
+                left: 8,
+                child: IgnorePointer(child: _gameHeader()),
+              ),
             if (stage != Stage.setup && stage != Stage.reveal)
               Positioned.fill(
                 child: IgnorePointer(
@@ -1682,20 +1685,7 @@ class _GamePageState extends State<GamePage> {
         _head(Icons.wb_sunny, _gold, 'KUN',
             'Muhokama bosqichi  •  ${t('turn')}${speakIndex + 1}/${speakers.length}',
             timerOn: true),
-        _card(
-          pad: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: _gold,
-          child: Row(children: [
-            const Icon(Icons.diamond, color: _gold),
-            const SizedBox(width: 8),
-            Expanded(child: Text(
-              room == 12 ? 'Pro xona (12)' : 'Oddiy xona ($room)',
-              style: const TextStyle(fontWeight: FontWeight.w800))),
-            const Icon(Icons.workspace_premium, color: _gold),
-          ]),
-        ),
         _table(speaker: sp),
-        _chatPanel(),
         _card(
           color: _gold,
           child: Row(children: [
