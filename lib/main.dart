@@ -7,6 +7,13 @@ void main() => runApp(const MafiaApp());
 
 const turnSeconds = 30;
 
+const _ink = Color(0xFF070A14);
+const _panel = Color(0xFF11182A);
+const _violet = Color(0xFF7C4DFF);
+const _cyan = Color(0xFF00E5FF);
+const _pink = Color(0xFFFF3D81);
+const _gold = Color(0xFFFFC857);
+
 enum AppLang { uz, ru, en }
 
 String langName(AppLang l) => switch (l) {
@@ -238,22 +245,38 @@ class MafiaApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           brightness: Brightness.dark,
-          colorSchemeSeed: Colors.redAccent,
-          scaffoldBackgroundColor: const Color(0xFF09060A),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: _violet,
+            brightness: Brightness.dark,
+          ).copyWith(
+            primary: _violet,
+            secondary: _cyan,
+            tertiary: _pink,
+            surface: _panel,
+          ),
+          scaffoldBackgroundColor: _ink,
           splashFactory: InkSparkle.splashFactory,
+          appBarTheme: const AppBarTheme(
+            foregroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
+          ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Colors.white10,
+            fillColor: _panel,
             hintStyle: const TextStyle(color: Colors.white38),
-            prefixIconColor: Colors.white70,
+            prefixIconColor: _cyan,
             contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide.none,
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(color: Colors.white10),
+            ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+              borderSide: const BorderSide(color: _cyan, width: 1.5),
             ),
           ),
         ),
@@ -574,7 +597,7 @@ class _GamePageState extends State<GamePage> {
   void _openSettings() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1D1114),
+      backgroundColor: _panel,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -592,7 +615,7 @@ class _GamePageState extends State<GamePage> {
               ),
             ),
             Row(children: [
-              const Icon(Icons.settings, color: Colors.redAccent),
+              const Icon(Icons.settings, color: _cyan),
               const SizedBox(width: 10),
               Text(t('settings'),
                   style: const TextStyle(
@@ -671,12 +694,12 @@ class _GamePageState extends State<GamePage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              (color ?? Colors.white).withAlpha(30),
-              Colors.white.withAlpha(9),
+              (color ?? _violet).withAlpha(38),
+              Colors.white.withAlpha(7),
             ],
           ),
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: (color ?? Colors.white).withAlpha(32)),
+          border: Border.all(color: (color ?? _cyan).withAlpha(55)),
           boxShadow: const [
             BoxShadow(color: Colors.black38, blurRadius: 16, offset: Offset(0, 7)),
           ],
@@ -690,10 +713,10 @@ class _GamePageState extends State<GamePage> {
           onPressed: onTap,
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(58),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: _violet,
             foregroundColor: Colors.white,
-            elevation: 8,
-            shadowColor: Colors.redAccent.withAlpha(90),
+            elevation: 10,
+            shadowColor: _violet.withAlpha(110),
             textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
@@ -872,11 +895,11 @@ class _GamePageState extends State<GamePage> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF1F5A38),
-                    const Color(0xFF12351F),
+                    const Color(0xFF18245A),
+                    const Color(0xFF0C1230),
                   ],
                 ),
-                border: Border.all(color: const Color(0xFF6D4C41), width: 6),
+                border: Border.all(color: _violet.withAlpha(190), width: 4),
                 boxShadow: const [
                   BoxShadow(
                       color: Colors.black54, blurRadius: 20, spreadRadius: 2),
@@ -972,22 +995,22 @@ class _GamePageState extends State<GamePage> {
             Positioned(
               top: -90,
               right: -70,
-              child: _ambientOrb(Colors.redAccent, 190),
+              child: _ambientOrb(_violet, 190),
             ),
             Positioned(
               top: 170,
               left: -110,
               child: _ambientOrb(
                 stage == Stage.night
-                    ? const Color(0xFF4A5FFF)
-                    : Colors.deepOrange,
+                    ? _cyan
+                    : _pink,
                 220,
               ),
             ),
             Positioned(
               bottom: -120,
               right: -80,
-              child: _ambientOrb(Colors.purpleAccent, 240),
+              child: _ambientOrb(_pink, 240),
             ),
             const Positioned.fill(
               child: IgnorePointer(
@@ -1045,10 +1068,10 @@ class _GamePageState extends State<GamePage> {
           margin: const EdgeInsets.all(4),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: (on ? Colors.redAccent : Colors.white).withAlpha(on ? 60 : 22),
+            color: (on ? _violet : Colors.white).withAlpha(on ? 72 : 18),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-                color: on ? Colors.redAccent : Colors.white12, width: 2),
+                color: on ? _cyan : Colors.white12, width: 2),
           ),
           child: Column(children: [
             Icon(icon, size: 32),
@@ -1064,7 +1087,7 @@ class _GamePageState extends State<GamePage> {
 
   Widget _setup() => ListView(padding: const EdgeInsets.all(20), children: [
         const SizedBox(height: 28),
-        Center(child: _hero(Icons.theater_comedy, Colors.redAccent, size: 78)),
+        Center(child: _hero(Icons.theater_comedy, _violet, size: 78)),
         const SizedBox(height: 18),
         Text(t('appTitle'),
             textAlign: TextAlign.center,
