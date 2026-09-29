@@ -437,6 +437,14 @@ class _GamePageState extends State<GamePage> {
     setState(() {
       players = [];
       stage = Stage.setup;
+      revealIndex = 0;
+      revealed = false;
+      round = 1;
+      winner = null;
+      message = '';
+      speakers = [];
+      speakerIndex = 0;
+      _clearTargets();
     });
   }
 
@@ -602,7 +610,7 @@ class _GamePageState extends State<GamePage> {
 
   Widget _pick(String label, IconData icon, Color color, Player? value,
           ValueChanged<Player?> on,
-          {bool roles = false}) =>
+          {bool roles = false, bool excludeMafia = false}) =>
       _card(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -616,7 +624,8 @@ class _GamePageState extends State<GamePage> {
           ]),
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final p in alive)
+            for (final p in alive.where(
+                (p) => !excludeMafia || p.role != Role.mafia))
               ChoiceChip(
                 avatar: CircleAvatar(
                   backgroundColor:
@@ -997,7 +1006,7 @@ class _GamePageState extends State<GamePage> {
         _table(roles: true),
         _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
             killTarget, (p) => killTarget = p,
-            roles: true),
+            roles: true, excludeMafia: true),
         _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
             saveTarget, (p) => saveTarget = p,
             roles: true),
