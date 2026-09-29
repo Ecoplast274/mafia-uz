@@ -995,6 +995,71 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
+  void _openGiftPicker() {
+    final targets = alive.toList();
+    if (targets.isEmpty) {
+      _showQuickAction('Sovg‘a', 'Tirik o‘yinchi yo‘q.');
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _panel,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const Text(
+                'Kimga sovg‘a yuborasiz?',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (final p in targets)
+                    ChoiceChip(
+                      avatar: CircleAvatar(
+                        backgroundColor:
+                            avatarColors[players.indexOf(p) % avatarColors.length],
+                        child: Text(ini(p.name)),
+                      ),
+                      label: Text('№${players.indexOf(p) + 1} ${p.name}'),
+                      onSelected: (selected) {
+                        if (!selected) return;
+                        Navigator.pop(sheetCtx);
+                        _showQuickAction(
+                          'Sovg‘a',
+                          '№${players.indexOf(p) + 1} ${p.name}ga sovg‘a yuborildi.',
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showQuickAction(String title, String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1618,7 +1683,9 @@ class _GamePageState extends State<GamePage> {
           _head(Icons.nightlight_round, const Color(0xFF8FA7FF), 'TUN',
               'Mafiya harakatlanmoqda...', timerOn: true),
           _table(),
+          const SizedBox(height: 42),
           _nightActions(),
+          const SizedBox(height: 6),
           _btn(t('startMorning'), _resolveNight),
         ],
       );
@@ -1764,13 +1831,15 @@ class _GamePageState extends State<GamePage> {
             'Muhokama bosqichi  •  ${t('turn')}${speakIndex + 1}/${speakers.length}',
             timerOn: true),
         _table(speaker: sp),
+        const SizedBox(height: 42),
         _btn(last ? t('goToVote') : t('nextPlayer'), _nextSpeaker),
+        const SizedBox(height: 6),
         _bottomBar(
           onVote: _toVote,
           showVote: true,
           onChat: () => _showQuickAction('Chat', 'Chat oynasi keyingi bosqichda.'),
           onSpeak: _nextSpeaker,
-          onGift: () => _showQuickAction('Sovg‘a', 'Sovg‘a funksiyasi hozircha lokal.'),
+          onGift: _openGiftPicker,
         ),
       ],
     );
