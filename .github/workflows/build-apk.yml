@@ -32,6 +32,9 @@ jobs:
 
       - run: flutter pub get
 
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
       - run: flutter build apk --release
 
       - name: Release yaratish
