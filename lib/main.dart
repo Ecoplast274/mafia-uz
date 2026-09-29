@@ -1223,10 +1223,10 @@ class _GamePageState extends State<GamePage> {
             roleIcon(Role.sheriff),
             roleColor(Role.sheriff),
             checkTarget,
-            (p) => setState(() {
+            (p) {
               checkTarget = p;
               sheriffResultRevealed = false;
-            }),
+            },
             excludePlayer: players.firstWhere(
               (p) => p.alive && p.role == Role.sheriff,
             ),
@@ -1244,9 +1244,7 @@ class _GamePageState extends State<GamePage> {
                 const SizedBox(height: 10),
                 _btn(
                   sheriffResultRevealed
-                      ? (checkTarget!.role == Role.mafia
-                          ? t('answerMafia')
-                          : t('answerClean'))
+                      ? t('hideCheckResult')
                       : t('showCheckResult'),
                   () => setState(
                       () => sheriffResultRevealed = !sheriffResultRevealed),
