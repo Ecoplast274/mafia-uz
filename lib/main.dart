@@ -229,7 +229,32 @@ class MafiaApp extends StatelessWidget {
           useMaterial3: true,
           brightness: Brightness.dark,
           colorSchemeSeed: Colors.redAccent,
-          scaffoldBackgroundColor: const Color(0xFF130A0D),
+          scaffoldBackgroundColor: const Color(0xFF09060A),
+          splashFactory: InkSparkle.splashFactory,
+          cardTheme: CardThemeData(
+            color: const Color(0xFF171016),
+            elevation: 8,
+            shadowColor: Colors.black87,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+              side: const BorderSide(color: Colors.white10),
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white10,
+            hintStyle: const TextStyle(color: Colors.white38),
+            prefixIconColor: Colors.white70,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+            ),
+          ),
         ),
         home: const GamePage(),
       );
@@ -610,8 +635,14 @@ class _GamePageState extends State<GamePage> {
         height: size + 44,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: color.withAlpha(45),
-          border: Border.all(color: color, width: 3),
+          gradient: RadialGradient(
+            colors: [color.withAlpha(80), color.withAlpha(18), Colors.transparent],
+            stops: const [0.25, 0.68, 1.0],
+          ),
+          border: Border.all(color: color.withAlpha(210), width: 2),
+          boxShadow: [
+            BoxShadow(color: color.withAlpha(100), blurRadius: 28, spreadRadius: 3),
+          ],
         ),
         child: Icon(icon, size: size, color: color),
       );
@@ -624,9 +655,19 @@ class _GamePageState extends State<GamePage> {
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: pad,
         decoration: BoxDecoration(
-          color: (color ?? Colors.white).withAlpha(22),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              (color ?? Colors.white).withAlpha(30),
+              Colors.white.withAlpha(9),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: (color ?? Colors.white).withAlpha(32)),
+          boxShadow: const [
+            BoxShadow(color: Colors.black38, blurRadius: 16, offset: Offset(0, 7)),
+          ],
         ),
         child: child,
       );
@@ -637,10 +678,12 @@ class _GamePageState extends State<GamePage> {
           onPressed: onTap,
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(58),
-            textStyle:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            backgroundColor: Colors.redAccent,
+            foregroundColor: Colors.white,
+            elevation: 8,
+            shadowColor: Colors.redAccent.withAlpha(90),
+            textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           child: Text(text),
         ),
@@ -913,17 +956,34 @@ class _GamePageState extends State<GamePage> {
             stops: const [0.0, 0.55, 1.0],
           ),
         ),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, -0.4),
-              radius: 1.3,
-              colors: [Colors.transparent, Colors.black38],
-              stops: [0.4, 1.0],
+        child: Stack(
+          children: [
+            Positioned(top: -90, right: -70, child: _ambientOrb(Colors.redAccent, 190)),
+            Positioned(
+              top: 170,
+              left: -110,
+              child: _ambientOrb(
+                stage == Stage.night ? const Color(0xFF4A5FFF) : Colors.deepOrange,
+                220,
+              ),
             ),
-          ),
-          child: SafeArea(
-            child: AnimatedSwitcher(
+            Positioned(bottom: -120, right: -80, child: _ambientOrb(Colors.purpleAccent, 240)),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(0, -0.35),
+                      radius: 1.2,
+                      colors: [Colors.transparent, Colors.black54],
+                      stops: [0.35, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               child: KeyedSubtree(
                 key: ValueKey('$stage-$revealIndex-$revealed-$round-$speakIndex-${lang.name}'),
@@ -935,6 +995,18 @@ class _GamePageState extends State<GamePage> {
       ),
     );
   }
+
+  Widget _ambientOrb(Color color, double size) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color.withAlpha(55), color.withAlpha(8), Colors.transparent],
+            stops: const [0.0, 0.55, 1.0],
+          ),
+        ),
+      );
 
   Widget _roomCard(int size, String title, IconData icon) {
     final on = room == size;
@@ -967,22 +1039,45 @@ class _GamePageState extends State<GamePage> {
   }
 
   Widget _setup() => ListView(padding: const EdgeInsets.all(20), children: [
-        const SizedBox(height: 40),
-        Center(child: _hero(Icons.theater_comedy, Colors.redAccent)),
-        const SizedBox(height: 16),
+        const SizedBox(height: 28),
+        Center(child: _hero(Icons.theater_comedy, Colors.redAccent, size: 78)),
+        const SizedBox(height: 18),
         Text(t('appTitle'),
             textAlign: TextAlign.center,
             style: _big?.copyWith(letterSpacing: 8)),
         const SizedBox(height: 4),
-        Text(t('subtitle'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70)),
-        const SizedBox(height: 20),
+        Text(
+          t('subtitle'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white60, fontSize: 14, letterSpacing: 0.4),
+        ),
+        const SizedBox(height: 24),
         Row(children: [
           _roomCard(8, t('roomOddiy'), Icons.groups),
           _roomCard(12, t('roomPro'), Icons.workspace_premium),
         ]),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
+        _card(
+          pad: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          color: Colors.redAccent,
+          child: Row(
+            children: [
+              const Icon(Icons.nightlife, color: Colors.redAccent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '${names.length} / $room  •  ${t('players')}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              Icon(
+                names.length == room ? Icons.check_circle : Icons.groups,
+                color: names.length == room ? Colors.greenAccent : Colors.white54,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
         Row(children: [
           Expanded(
             child: TextField(
