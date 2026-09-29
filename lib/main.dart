@@ -1042,6 +1042,7 @@ class _GamePageState extends State<GamePage> {
                         child: Text(ini(p.name)),
                       ),
                       label: Text('№${players.indexOf(p) + 1} ${p.name}'),
+                      selected: false,
                       onSelected: (selected) {
                         if (!selected) return;
                         Navigator.pop(sheetCtx);
