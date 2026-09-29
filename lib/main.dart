@@ -732,7 +732,26 @@ class _GamePageState extends State<GamePage> {
                 ),
                 title: Text(langName(l)),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                soundEnabled ? Icons.volume_up : Icons.volume_off,
+                color: _gold,
+              ),
+              title: Text(soundEnabled ? 'Ovozni o\'chirish' : 'Ovozni yoqish'),
+              onTap: () {
+                _toggleSound();
+                setSheet(() {});
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.copy, color: _cyan),
+              title: const Text('Xona ID sini nusxalash'),
+              onTap: _copyRoomId,
+            ),
+            const SizedBox(height: 4),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -832,56 +851,26 @@ class _GamePageState extends State<GamePage> {
   }
 
   Widget _gameHeader() => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
-        child: Row(children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(24),
-            onTap: _showRoomMenu,
-            child: Container(
-              width: 42, height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle, color: Colors.black.withAlpha(130),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: const Icon(Icons.keyboard_arrow_down, size: 30),
+        padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(125),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white12),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Mafia xonasi',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-              Text('ID: 123456  •  👥 $room / ${players.length}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            ]),
-          ),
-          for (final action in <Map<String, Object>>[
-            {'icon': Icons.ios_share, 'tap': _copyRoomId},
-            {'icon': Icons.volume_up, 'tap': _toggleSound},
-            {'icon': Icons.settings, 'tap': _openSettings},
-            {'icon': Icons.more_horiz, 'tap': _showMoreMenu},
-          ])
-            Padding(
-              padding: const EdgeInsets.only(left: 5),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(22),
-                onTap: action['tap'] as VoidCallback,
-                child: Container(
-                  width: 38, height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle, color: Colors.black.withAlpha(120),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Icon(
-                    action['icon'] == Icons.volume_up && !soundEnabled
-                        ? Icons.volume_off
-                        : action['icon'] as IconData,
-                    size: 19,
-                  ),
-                ),
+            child: Text(
+              'ID: 123456  •  👥 $room / ${players.length}',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
               ),
             ),
-        ]),
+          ),
+        ),
       );
 
   Widget _phaseBanner({
@@ -892,7 +881,7 @@ class _GamePageState extends State<GamePage> {
   }) => Center(
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [color.withAlpha(80), Colors.black.withAlpha(110)],
@@ -903,19 +892,20 @@ class _GamePageState extends State<GamePage> {
           ),
           child: Column(children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(icon, color: color, size: 25),
+              Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
               Text(title.toUpperCase(),
-                  style: TextStyle(color: color, fontSize: 22,
-                      fontWeight: FontWeight.w900, letterSpacing: 2)),
+                  style: TextStyle(color: color, fontSize: 18,
+                      fontWeight: FontWeight.w900, letterSpacing: 1.5)),
             ]),
             const SizedBox(height: 2),
-            Text(sub, style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 2),
+            Text(sub,
+                style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 1),
             Text('00:${timeLeft.toString().padLeft(2, '0')}',
                 style: TextStyle(
                   color: timeLeft <= 10 ? Colors.redAccent : Colors.white,
-                  fontSize: 19, fontWeight: FontWeight.w900,
+                  fontSize: 17, fontWeight: FontWeight.w900,
                 )),
           ]),
         ),
@@ -1547,47 +1537,120 @@ class _GamePageState extends State<GamePage> {
           _head(Icons.nightlight_round, const Color(0xFF8FA7FF), 'TUN',
               'Mafiya harakatlanmoqda...', timerOn: true),
           _table(),
-          if (_roleAlive(Role.mafia))
-            _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
-                killTarget, (p) => killTarget = p, excludeMafia: true),
-          if (_roleAlive(Role.doctor))
-            _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
-                saveTarget, (p) => saveTarget = p),
-          if (_roleAlive(Role.sheriff))
-            _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
-              checkTarget, (p) {
-                checkTarget = p;
-                sheriffResultRevealed = false;
-              },
-              excludePlayer: players.firstWhere(
-                (p) => p.alive && p.role == Role.sheriff)),
-          if (checkTarget != null)
-            _card(color: Colors.blueAccent, child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.lock, color: Colors.blueAccent),
-                const SizedBox(height: 8),
-                Text(t('checkPrivate'),
-                    style: const TextStyle(color: Colors.white70)),
-                if (sheriffResultRevealed)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      checkTarget!.role == Role.mafia
-                          ? t('answerMafia') : t('answerClean'),
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.w900)),
-                  ),
-                _btn(
-                  sheriffResultRevealed
-                      ? t('hideCheckResult') : t('showCheckResult'),
-                  () => setState(
-                      () => sheriffResultRevealed = !sheriffResultRevealed)),
-              ],
-            )),
+          _nightActions(),
           _btn(t('startMorning'), _resolveNight),
         ],
       );
+
+  Widget _nightActions() {
+    final actions = <Widget>[];
+    if (_roleAlive(Role.mafia)) {
+      actions.add(_nightAction('Mafiya', roleIcon(Role.mafia), roleColor(Role.mafia),
+          killTarget, () => _openNightPicker(Role.mafia)));
+    }
+    if (_roleAlive(Role.doctor)) {
+      actions.add(_nightAction('Doktor', roleIcon(Role.doctor), roleColor(Role.doctor),
+          saveTarget, () => _openNightPicker(Role.doctor)));
+    }
+    if (_roleAlive(Role.sheriff)) {
+      actions.add(_nightAction('Komissar', roleIcon(Role.sheriff), roleColor(Role.sheriff),
+          checkTarget, () => _openNightPicker(Role.sheriff)));
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 8,
+        runSpacing: 6,
+        children: actions,
+      ),
+    );
+  }
+
+  Widget _nightAction(
+      String label, IconData icon, Color color, Player? target, VoidCallback onTap) =>
+      OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 17, color: color),
+        label: Text(
+          target == null ? label : '$label: №${players.indexOf(target) + 1}',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.white,
+          side: BorderSide(color: color.withAlpha(120)),
+          backgroundColor: Colors.black.withAlpha(90),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          minimumSize: const Size(0, 34),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      );
+
+  void _openNightPicker(Role role) {
+    final title = switch (role) {
+      Role.mafia => t('mafiaAsk'),
+      Role.doctor => t('doctorAsk'),
+      Role.sheriff => t('sheriffAsk'),
+      Role.citizen => '',
+    };
+    final color = roleColor(role);
+    final current = switch (role) {
+      Role.mafia => killTarget,
+      Role.doctor => saveTarget,
+      Role.sheriff => checkTarget,
+      Role.citizen => null,
+    };
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _panel,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38, height: 4,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Text(title,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 8),
+              _pick(
+                title, roleIcon(role), color, current,
+                (p) {
+                  setState(() {
+                    if (role == Role.mafia) {
+                      killTarget = p;
+                    } else if (role == Role.doctor) {
+                      saveTarget = p;
+                    } else if (role == Role.sheriff) {
+                      checkTarget = p;
+                      sheriffResultRevealed = false;
+                    }
+                  });
+                  Navigator.pop(sheetCtx);
+                },
+                excludeMafia: role == Role.mafia,
+                excludePlayer: role == Role.sheriff
+                    ? players.firstWhere((p) => p.alive && p.role == Role.sheriff)
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _info() => Center(
         child: SingleChildScrollView(
