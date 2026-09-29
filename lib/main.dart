@@ -995,42 +995,80 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _bottomBar({required VoidCallback? onVote, required bool showVote}) =>
+  void _showQuickAction(String title, String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+        content: Text('$title: $message'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _bottomBar({
+    required VoidCallback? onVote,
+    required bool showVote,
+    VoidCallback? onChat,
+    VoidCallback? onSpeak,
+    VoidCallback? onGift,
+  }) =>
       Padding(
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
-        child: Row(children: [
-          Expanded(child: _bottomAction(Icons.chat_bubble_outline, 'Chat', false, null)),
-          const SizedBox(width: 8),
-          Expanded(child: _bottomAction(Icons.mic, 'Gapirish', true, null)),
-          const SizedBox(width: 8),
-          Expanded(child: _bottomAction(Icons.how_to_vote, 'Ovoz berish', false,
-              showVote ? onVote : null)),
-          const SizedBox(width: 8),
-          Expanded(child: _bottomAction(Icons.card_giftcard, 'Sovg‘a', false, null)),
-        ]),
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+        child: Row(
+          children: [
+            Expanded(child: _bottomAction(Icons.chat_bubble_outline, 'Chat', false, onChat)),
+            const SizedBox(width: 5),
+            Expanded(child: _bottomAction(Icons.mic, 'Gapirish', true, onSpeak)),
+            const SizedBox(width: 5),
+            Expanded(child: _bottomAction(
+              Icons.how_to_vote,
+              'Ovoz',
+              false,
+              showVote ? onVote : null,
+            )),
+            const SizedBox(width: 5),
+            Expanded(child: _bottomAction(Icons.card_giftcard, 'Sovg‘a', false, onGift)),
+          ],
+        ),
       );
 
   Widget _bottomAction(
       IconData icon, String label, bool active, VoidCallback? onTap) =>
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 62,
-          decoration: BoxDecoration(
-            gradient: active
-                ? const LinearGradient(
-                    colors: [Color(0xFFFF5964), Color(0xFFE52E4D)])
-                : null,
-            color: active ? null : Colors.black.withAlpha(145),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white12),
+      Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(13),
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: active
+                  ? const LinearGradient(
+                      colors: [Color(0xFFFF5964), Color(0xFFE52E4D)])
+                  : null,
+              color: active ? null : Colors.black.withAlpha(145),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 18),
+                const SizedBox(height: 1),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 22),
-            const SizedBox(height: 3),
-            Text(label, style: const TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w700)),
-          ]),
         ),
       );
 
@@ -1726,18 +1764,14 @@ class _GamePageState extends State<GamePage> {
             'Muhokama bosqichi  •  ${t('turn')}${speakIndex + 1}/${speakers.length}',
             timerOn: true),
         _table(speaker: sp),
-        _card(
-          color: _gold,
-          child: Row(children: [
-            const Icon(Icons.mic, color: _gold, size: 28),
-            const SizedBox(width: 10),
-            Expanded(child: Text('${sp.name} gapiryapti',
-                style: const TextStyle(fontSize: 17,
-                    fontWeight: FontWeight.w800))),
-          ]),
-        ),
         _btn(last ? t('goToVote') : t('nextPlayer'), _nextSpeaker),
-        _bottomBar(onVote: _toVote, showVote: true),
+        _bottomBar(
+          onVote: _toVote,
+          showVote: true,
+          onChat: () => _showQuickAction('Chat', 'Chat oynasi keyingi bosqichda.'),
+          onSpeak: _nextSpeaker,
+          onGift: () => _showQuickAction('Sovg‘a', 'Sovg‘a funksiyasi hozircha lokal.'),
+        ),
       ],
     );
   }
