@@ -343,6 +343,20 @@ class _GamePageState extends State<GamePage> {
     await _musicPlayer?.stop();
   }
 
+  Future<void> _startMusic() async {
+    if (!soundEnabled) return;
+    _musicPlayer ??= AudioPlayer();
+    await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
+    await _musicPlayer!.setVolume(0.16);
+    await _musicPlayer!.play(
+      UrlSource('https://raw.githubusercontent.com/uncle-sheepsky/duru-ai-cc0-bgm/main/mp3/duru-rondo.mp3'),
+    );
+  }
+
+  Future<void> _stopMusic() async {
+    await _musicPlayer?.stop();
+  }
+
   @override
   void dispose() {
     timer?.cancel();
@@ -396,6 +410,7 @@ class _GamePageState extends State<GamePage> {
 
   void _start() {
     timer?.cancel();
+    _startMusic();
     final roles = dealRoles(names.length);
     setState(() {
       players = [
@@ -599,6 +614,7 @@ class _GamePageState extends State<GamePage> {
 
   void _reset() {
     timer?.cancel();
+    _stopMusic();
     setState(() {
       players = [];
       stage = Stage.setup;
@@ -659,6 +675,11 @@ class _GamePageState extends State<GamePage> {
 
   void _toggleSound() {
     setState(() => soundEnabled = !soundEnabled);
+    if (soundEnabled) {
+      _startMusic();
+    } else {
+      _stopMusic();
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(soundEnabled ? 'Ovoz yoqildi' : 'Ovoz o\'chirildi')),
     );
