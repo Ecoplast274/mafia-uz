@@ -1123,52 +1123,100 @@ class _GamePageState extends State<GamePage> {
     final n = players.length;
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final av = n > 10 ? 40.0 : 46.0;
-      final sw = av + 32;
-      final rx = w / 2 - sw / 2;
-      final ry = w / 2 - av - 4;
+      final h = math.min(w * .92, 430.0);
+      final av = n > 10 ? 38.0 : 44.0;
+      final sw = av + 28;
+      final tableSize = math.min(w * .62, h * .68);
+      final sideCount = n == 12 ? 3 : 2;
+
+      Offset centerFor(int index) {
+        final side = index ~/ sideCount;
+        final slot = index % sideCount;
+        final usableW = w * .64;
+        final usableH = h * .68;
+        final left = (w - usableW) / 2;
+        final top = (h - usableH) / 2;
+        final xStep = usableW / (sideCount + 1);
+        final yStep = usableH / (sideCount + 1);
+
+        switch (side) {
+          case 0:
+            return Offset(left + xStep * (slot + 1), top);
+          case 1:
+            return Offset(w - left, top + yStep * (slot + 1));
+          case 2:
+            return Offset(
+              w - left - xStep * (slot + 1),
+              h - top,
+            );
+          default:
+            return Offset(left, h - top - yStep * (slot + 1));
+        }
+      }
+
       return SizedBox(
-        width: w, height: math.min(w * .88, 430),
-        child: Stack(children: [
-          Center(
-            child: Container(
-              width: w * .62, height: w * .62,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const RadialGradient(colors: [
-                  Color(0xFF6E3217), Color(0xFF241006), Color(0xFF0A0707),
-                ]),
-                border: Border.all(color: Colors.white12, width: 2),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black87, blurRadius: 30, spreadRadius: 6),
-                ],
-              ),
-              child: Center(
-                child: Container(
-                  width: w * .30, height: w * .30,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.black.withAlpha(95),
-                    border: Border.all(color: _gold.withAlpha(70)),
+        width: w,
+        height: h,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Center(
+              child: Container(
+                width: tableSize,
+                height: tableSize,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF6E3217),
+                      Color(0xFF321408),
+                      Color(0xFF120907),
+                    ],
                   ),
-                  child: const Center(
-                    child: Text('MAFIA',
-                        style: TextStyle(color: Color(0x66FFFFFF),
-                            fontSize: 22, fontWeight: FontWeight.w900,
-                            letterSpacing: 3)),
+                  border: Border.all(color: _gold.withAlpha(115), width: 2.5),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black87,
+                      blurRadius: 28,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: tableSize * .46,
+                    height: tableSize * .46,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      color: Colors.black.withAlpha(95),
+                      border: Border.all(color: _gold.withAlpha(70)),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'MAFIA',
+                        style: TextStyle(
+                          color: Color(0x66FFFFFF),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          for (var i = 0; i < n; i++)
-            Positioned(
-              left: w / 2 + rx * math.cos(_ang(i, n)) - sw / 2,
-              top: w / 2 + ry * math.sin(_ang(i, n)) - av / 2,
-              width: sw,
-              child: _seat(i, av, players[i] == speaker, roles),
-            ),
-        ]),
+            for (var i = 0; i < n; i++)
+              Positioned(
+                left: centerFor(i).dx - sw / 2,
+                top: centerFor(i).dy - av / 2,
+                width: sw,
+                child: _seat(i, av, players[i] == speaker, roles),
+              ),
+          ],
+        ),
       );
     });
   }
