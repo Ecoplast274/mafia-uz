@@ -10,5 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  supabase_flutter: ^2.9.0
+
 flutter:
   uses-material-design: true
