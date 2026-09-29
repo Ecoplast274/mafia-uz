@@ -631,7 +631,7 @@ class _GamePageState extends State<GamePage> {
           ]),
         ]),
       );
-  // ---------- Stol ----------
+// ---------- Stol ----------
 
   double _ang(int i, int n) => -math.pi / 2 + 2 * math.pi * i / n;
 
@@ -705,8 +705,8 @@ class _GamePageState extends State<GamePage> {
     final n = players.length;
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final av = n > 8 ? 42.0 : 50.0;
-      final sw = av + 24;
+      final av = n > 8 ? 34.0 : 40.0;
+      final sw = av + 22;
       final rx = w / 2 - sw / 2;
       final ry = w / 2 - av;
       return SizedBox(
@@ -715,15 +715,30 @@ class _GamePageState extends State<GamePage> {
         child: Stack(children: [
           Center(
             child: Container(
-              width: w * 0.55,
-              height: w * 0.55,
+              width: w * 0.7,
+              height: w * 0.7,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF1B4D2E),
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF1F5A38),
+                    const Color(0xFF12351F),
+                  ],
+                ),
                 border: Border.all(color: const Color(0xFF6D4C41), width: 6),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Colors.black54, blurRadius: 20, spreadRadius: 2),
+                ],
               ),
-              child: const Icon(Icons.theater_comedy,
-                  color: Colors.white24, size: 48),
+              child: Text('MAFIYA',
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(40),
+                    fontSize: w * 0.11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 4,
+                  )),
             ),
           ),
           for (var i = 0; i < n; i++)
@@ -741,10 +756,26 @@ class _GamePageState extends State<GamePage> {
   // ---------- Ekranlar ----------
 
   List<Color> get _bg => switch (stage) {
-        Stage.night => const [Color(0xFF0B1026), Color(0xFF1B2A5A)],
-        Stage.talk || Stage.vote => const [Color(0xFF3A1C0B), Color(0xFF8A4B14)],
-        Stage.end => const [Color(0xFF1A0F0F), Color(0xFF4A1414)],
-        _ => const [Color(0xFF140A0A), Color(0xFF3B0D0D)],
+        Stage.night => const [
+            Color(0xFF05060F),
+            Color(0xFF0E1A3D),
+            Color(0xFF1B2A5A),
+          ],
+        Stage.talk || Stage.vote => const [
+            Color(0xFF2A1206),
+            Color(0xFF5A2E0C),
+            Color(0xFF8A4B14),
+          ],
+        Stage.end => const [
+            Color(0xFF120707),
+            Color(0xFF3D0F0F),
+            Color(0xFF5A1414),
+          ],
+        _ => const [
+            Color(0xFF0F0506),
+            Color(0xFF2B0A0D),
+            Color(0xFF4A1013),
+          ],
       };
 
   @override
@@ -784,14 +815,25 @@ class _GamePageState extends State<GamePage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: _bg,
+            stops: const [0.0, 0.55, 1.0],
           ),
         ),
-        child: SafeArea(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: KeyedSubtree(
-              key: ValueKey('$stage-$revealIndex-$revealed-$round-$speakIndex-${lang.name}'),
-              child: body,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0, -0.4),
+              radius: 1.3,
+              colors: [Colors.transparent, Colors.black38],
+              stops: [0.4, 1.0],
+            ),
+          ),
+          child: SafeArea(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: KeyedSubtree(
+                key: ValueKey('$stage-$revealIndex-$revealed-$round-$speakIndex-${lang.name}'),
+                child: body,
+              ),
             ),
           ),
         ),
