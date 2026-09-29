@@ -1151,7 +1151,7 @@ class _GamePageState extends State<GamePage> {
               Positioned.fill(
                 child: IgnorePointer(
                   child: ColoredBox(
-                    color: Colors.black54,
+                    color: const Color(0x44000000),
                   ),
                 ),
               ),
