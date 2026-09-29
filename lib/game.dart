@@ -27,22 +27,36 @@ class Player {
 }
 
 List<Role> dealRoles(int n) {
+  if (n < 4) {
+    throw ArgumentError('Kamida 4 ta o\'yinchi kerak.');
+  }
+
   final mafia = max(1, n ~/ 4);
   final roles = <Role>[
     ...List.filled(mafia, Role.mafia),
     Role.doctor,
     Role.sheriff,
   ];
+
   while (roles.length < n) {
     roles.add(Role.citizen);
   }
+
+  // Himoyalangan rollar soni hech qachon o'yinchilar sonidan oshib ketmasin.
+  if (roles.length > n) {
+    roles.removeRange(n, roles.length);
+  }
+
   roles.shuffle();
   return roles;
 }
 
 String? checkWinner(List<Player> ps) {
+  if (ps.isEmpty) return null;
+
   final m = ps.where((p) => p.alive && p.role == Role.mafia).length;
   final o = ps.where((p) => p.alive && p.role != Role.mafia).length;
+
   if (m == 0) return 'Tinch aholi';
   if (m >= o) return 'Mafiya';
   return null;
