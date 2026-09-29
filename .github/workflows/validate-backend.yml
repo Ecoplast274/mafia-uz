@@ -1,0 +1,32 @@
+name: Validate Firebase Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "functions/**"
+      - "firebase.json"
+      - "firestore.rules"
+      - "firestore.indexes.json"
+  pull_request:
+    paths:
+      - "functions/**"
+      - "firebase.json"
+      - "firestore.rules"
+      - "firestore.indexes.json"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install backend dependencies
+        working-directory: functions
+        run: npm install --omit=dev
+      - name: Check JavaScript syntax
+        working-directory: functions
+        run: node --check index.js
