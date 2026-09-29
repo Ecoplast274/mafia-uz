@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'game.dart';
 
 void main() => runApp(const MafiaApp());
@@ -1131,6 +1132,29 @@ class _GamePageState extends State<GamePage> {
         ),
         child: Stack(
           children: [
+            if (stage != Stage.setup && stage != Stage.reveal)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    child: SvgPicture.asset(
+                      stage == Stage.night
+                          ? 'assets/night_room.svg'
+                          : 'assets/day_room.svg',
+                      key: ValueKey(stage == Stage.night ? 'night-bg' : 'day-bg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            if (stage != Stage.setup && stage != Stage.reveal)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
             Positioned(
               top: -90,
               right: -70,
