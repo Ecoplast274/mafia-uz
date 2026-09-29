@@ -1101,7 +1101,7 @@ class _GamePageState extends State<GamePage> {
         if (_roleAlive(Role.sheriff))
           _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
               checkTarget, (p) => checkTarget = p,
-              roles: true),
+              ),
         if (checkTarget != null)
           _card(
             color: Colors.blueAccent,
