@@ -231,15 +231,6 @@ class MafiaApp extends StatelessWidget {
           colorSchemeSeed: Colors.redAccent,
           scaffoldBackgroundColor: const Color(0xFF09060A),
           splashFactory: InkSparkle.splashFactory,
-          cardTheme: CardThemeData(
-            color: const Color(0xFF171016),
-            elevation: 8,
-            shadowColor: Colors.black87,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(22),
-              side: const BorderSide(color: Colors.white10),
-            ),
-          ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
             fillColor: Colors.white10,
@@ -927,6 +918,7 @@ class _GamePageState extends State<GamePage> {
       Stage.vote => _vote(),
       Stage.end => _end(),
     };
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -934,9 +926,7 @@ class _GamePageState extends State<GamePage> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          (stage == Stage.setup || stage == Stage.reveal)
-              ? ''
-              : '$round-raund',
+          (stage == Stage.setup || stage == Stage.reveal) ? '' : '$round-raund',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -958,16 +948,26 @@ class _GamePageState extends State<GamePage> {
         ),
         child: Stack(
           children: [
-            Positioned(top: -90, right: -70, child: _ambientOrb(Colors.redAccent, 190)),
+            Positioned(
+              top: -90,
+              right: -70,
+              child: _ambientOrb(Colors.redAccent, 190),
+            ),
             Positioned(
               top: 170,
               left: -110,
               child: _ambientOrb(
-                stage == Stage.night ? const Color(0xFF4A5FFF) : Colors.deepOrange,
+                stage == Stage.night
+                    ? const Color(0xFF4A5FFF)
+                    : Colors.deepOrange,
                 220,
               ),
             ),
-            Positioned(bottom: -120, right: -80, child: _ambientOrb(Colors.purpleAccent, 240)),
+            Positioned(
+              bottom: -120,
+              right: -80,
+              child: _ambientOrb(Colors.purpleAccent, 240),
+            ),
             const Positioned.fill(
               child: IgnorePointer(
                 child: DecoratedBox(
@@ -984,13 +984,16 @@ class _GamePageState extends State<GamePage> {
             ),
             SafeArea(
               child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: KeyedSubtree(
-                key: ValueKey('$stage-$revealIndex-$revealed-$round-$speakIndex-${lang.name}'),
-                child: body,
+                duration: const Duration(milliseconds: 300),
+                child: KeyedSubtree(
+                  key: ValueKey(
+                    '$stage-$revealIndex-$revealed-$round-$speakIndex-${lang.name}',
+                  ),
+                  child: body,
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
