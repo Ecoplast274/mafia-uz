@@ -263,6 +263,9 @@ class _GamePageState extends State<GamePage> {
 
   List<Player> get alive => players.where((p) => p.alive).toList();
 
+  bool _roleAlive(Role role) =>
+      players.any((p) => p.alive && p.role == role);
+
   @override
   void dispose() {
     timer?.cancel();
@@ -332,17 +335,35 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _toNight() {
+    timer?.cancel();
     _clearTargets();
+
+    final currentWinner = checkWinner(players);
+    if (currentWinner != null) {
+      setState(() {
+        winner = currentWinner;
+        stage = Stage.end;
+      });
+      return;
+    }
+
     setState(() => stage = Stage.night);
     _startTimer(_resolveNight);
   }
 
   void _toTalk() {
+    timer?.cancel();
+
+    if (alive.isEmpty) {
+      return;
+    }
+
     final n = players.length;
     final start = (round - 1) % n;
     speakers = [
       for (var i = 0; i < n; i++) players[(start + i) % n]
     ].where((p) => p.alive).toList();
+
     speakIndex = 0;
     setState(() => stage = Stage.talk);
     _startTimer(_nextSpeaker);
@@ -350,6 +371,12 @@ class _GamePageState extends State<GamePage> {
 
   void _nextSpeaker() {
     timer?.cancel();
+
+    if (speakers.isEmpty) {
+      _toNight();
+      return;
+    }
+
     if (speakIndex >= speakers.length - 1) {
       _toVote();
       return;
@@ -384,12 +411,14 @@ class _GamePageState extends State<GamePage> {
   void _resolveNight() {
     timer?.cancel();
     setState(() {
-      final k = killTarget;
+      final k = _roleAlive(Role.mafia) ? killTarget : null;
       String msg;
       IconData icon;
       Color color;
       if (k == null) {
-        msg = t('nightPeaceful');
+        msg = _roleAlive(Role.mafia)
+            ? t('nightPeaceful')
+            : "Mafiya tirik emas. " + t('nightPeaceful');
         icon = Icons.nightlight_round;
         color = const Color(0xFF9FA8DA);
       } else if (k == saveTarget) {
@@ -1004,15 +1033,18 @@ class _GamePageState extends State<GamePage> {
             t('nightSub'),
             timerOn: true),
         _table(roles: true),
-        _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
-            killTarget, (p) => killTarget = p,
-            roles: true, excludeMafia: true),
-        _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
-            saveTarget, (p) => saveTarget = p,
-            roles: true),
-        _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
-            checkTarget, (p) => checkTarget = p,
-            roles: true),
+        if (_roleAlive(Role.mafia))
+          _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
+              killTarget, (p) => killTarget = p,
+              roles: true, excludeMafia: true),
+        if (_roleAlive(Role.doctor))
+          _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
+              saveTarget, (p) => saveTarget = p,
+              roles: true),
+        if (_roleAlive(Role.sheriff))
+          _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
+              checkTarget, (p) => checkTarget = p,
+              roles: true),
         if (checkTarget != null)
           _card(
             color: checkTarget!.role == Role.mafia
