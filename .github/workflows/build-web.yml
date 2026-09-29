@@ -26,7 +26,7 @@ jobs:
           cache: true
 
       - run: |
-          flutter create --platforms=web --project-name mafia_uz .
+          flutter create --platforms=web --project-name mafia_uz --no-pub .
 
       - run: flutter pub get
 
