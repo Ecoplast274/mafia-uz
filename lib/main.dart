@@ -1242,6 +1242,17 @@ class _GamePageState extends State<GamePage> {
                 Text(t('checkPrivate'),
                     style: const TextStyle(color: Colors.white70)),
                 const SizedBox(height: 10),
+                if (sheriffResultRevealed)
+                  Text(
+                    checkTarget!.role == Role.mafia
+                        ? t('answerMafia')
+                        : t('answerClean'),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
                 _btn(
                   sheriffResultRevealed
                       ? t('hideCheckResult')
