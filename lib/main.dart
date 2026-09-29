@@ -273,12 +273,6 @@ class _GamePageState extends State<GamePage> {
   bool _roleAlive(Role role) =>
       players.any((p) => p.alive && p.role == role);
 
-  @override
-  void dispose() {
-    timer?.cancel();
-    ctrl.dispose();
-    super.dispose();
-  }
 
   // ---------- Taymer ----------
 
