@@ -7,6 +7,14 @@ void main() => runApp(const MafiaApp());
 
 const turnSeconds = 30;
 
+enum AppLang { uz, ru, en }
+
+String langName(AppLang l) => switch (l) {
+      AppLang.uz => "O'zbek",
+      AppLang.ru => 'Русский',
+      AppLang.en => 'English',
+    };
+
 const avatarColors = [
   Color(0xFFE53935),
   Color(0xFF8E24AA),
@@ -38,6 +46,173 @@ Color roleColor(Role r) => switch (r) {
 
 String ini(String n) => n.isEmpty ? '?' : n[0].toUpperCase();
 
+String roleTitle(Role r, AppLang l) {
+  const m = {
+    Role.mafia: {'uz': 'Mafiya', 'ru': 'Мафия', 'en': 'Mafia'},
+    Role.doctor: {'uz': 'Doktor', 'ru': 'Доктор', 'en': 'Doctor'},
+    Role.sheriff: {'uz': 'Komissar', 'ru': 'Комиссар', 'en': 'Sheriff'},
+    Role.citizen: {'uz': 'Tinch aholi', 'ru': 'Мирный житель', 'en': 'Citizen'},
+  };
+  return m[r]![l.name]!;
+}
+
+String roleHint(Role r, AppLang l) {
+  const m = {
+    Role.mafia: {
+      'uz': "Har tuni tunda bitta odamni o'ldirasiz.",
+      'ru': 'Каждую ночь вы убиваете одного игрока.',
+      'en': 'Each night you kill one player.',
+    },
+    Role.doctor: {
+      'uz': "Har tuni tunda bitta odamni o'limdan qutqarasiz.",
+      'ru': 'Каждую ночь вы спасаете одного игрока.',
+      'en': 'Each night you save one player.',
+    },
+    Role.sheriff: {
+      'uz': "Har tuni tunda bitta odamni tekshirasiz: mafiyami yoki yo'q.",
+      'ru': 'Каждую ночь вы проверяете одного игрока — мафия он или нет.',
+      'en': "Each night you check one player: mafia or not.",
+    },
+    Role.citizen: {
+      'uz': 'Kunduzi muhokama qilib, mafiyani toping.',
+      'ru': 'Днём обсуждайте и вычисляйте мафию.',
+      'en': 'During the day, discuss and find the mafia.',
+    },
+  };
+  return m[r]![l.name]!;
+}
+
+const Map<String, Map<String, String>> _dict = {
+  'appTitle': {'uz': 'MAFIYA', 'ru': 'МАФИЯ', 'en': 'MAFIA'},
+  'subtitle': {
+    'uz': "Shahar uxlaydi, mafiya uyg'onadi",
+    'ru': 'Город спит, мафия просыпается',
+    'en': 'The town sleeps, the mafia wakes',
+  },
+  'roomOddiy': {'uz': 'Oddiy xona', 'ru': 'Обычная комната', 'en': 'Standard room'},
+  'roomPro': {'uz': 'Pro xona', 'ru': 'Про комната', 'en': 'Pro room'},
+  'players': {'uz': "o'yinchi", 'ru': 'игроков', 'en': 'players'},
+  'nameHint': {'uz': "O'yinchi ismi", 'ru': 'Имя игрока', 'en': 'Player name'},
+  'fillDemo': {
+    'uz': "Namuna ismlar bilan to'ldirish (sinash uchun)",
+    'ru': 'Заполнить тестовыми именами',
+    'en': 'Fill with sample names (for testing)',
+  },
+  'startGame': {'uz': "O'yinni boshlash", 'ru': 'Начать игру', 'en': 'Start game'},
+  'dontLook': {
+    'uz': 'Telefonni %n ga bering.\nBoshqalar qaramasin!',
+    'ru': 'Передайте телефон %n.\nПусть другие не смотрят!',
+    'en': "Hand the phone to %n.\nOthers shouldn't look!",
+  },
+  'showRole': {'uz': "Rolimni ko'rish", 'ru': 'Показать роль', 'en': 'Show my role'},
+  'mates': {'uz': 'Sheriklaringiz: ', 'ru': 'Ваши сообщники: ', 'en': 'Your partners: '},
+  'closeNext': {
+    'uz': 'Yopish va keyingisiga',
+    'ru': 'Закрыть и далее',
+    'en': 'Close and next',
+  },
+  'closeToLeader': {
+    'uz': 'Yetakchiga qaytaring',
+    'ru': 'Верните ведущему',
+    'en': 'Return to the host',
+  },
+  'nightTitle': {'uz': 'Tun', 'ru': 'Ночь', 'en': 'Night'},
+  'nightSub': {
+    'uz': 'Yetakchi: tanlovlarni kiriting.',
+    'ru': 'Ведущий: введите выбор ролей.',
+    'en': "Host: enter each role's choice.",
+  },
+  'mafiaAsk': {
+    'uz': "Mafiya kimni o'ldiradi?",
+    'ru': 'Кого убивает мафия?',
+    'en': 'Who does the mafia kill?',
+  },
+  'doctorAsk': {
+    'uz': 'Doktor kimni qutqaradi?',
+    'ru': 'Кого спасает доктор?',
+    'en': 'Who does the doctor save?',
+  },
+  'sheriffAsk': {
+    'uz': 'Komissar kimni tekshiradi?',
+    'ru': 'Кого проверяет комиссар?',
+    'en': 'Who does the sheriff check?',
+  },
+  'answerMafia': {'uz': 'Javob: MAFIYA', 'ru': 'Ответ: МАФИЯ', 'en': 'Answer: MAFIA'},
+  'answerClean': {
+    'uz': "Javob: mafiya emas",
+    'ru': 'Ответ: не мафия',
+    'en': 'Answer: not mafia',
+  },
+  'startMorning': {'uz': 'Tongni boshlash', 'ru': 'Начать утро', 'en': 'Start morning'},
+  'aliveCount': {
+    'uz': "Tirik o'yinchilar: ",
+    'ru': 'Живых игроков: ',
+    'en': 'Alive players: ',
+  },
+  'goToTalk': {
+    'uz': "Gaplashishga o'tish",
+    'ru': 'Перейти к обсуждению',
+    'en': 'Go to discussion',
+  },
+  'goToNight': {'uz': "Tunga o'tish", 'ru': 'Перейти к ночи', 'en': 'Go to night'},
+  'talkTitle': {'uz': 'Gaplashish', 'ru': 'Обсуждение', 'en': 'Discussion'},
+  'turn': {'uz': 'Navbat: ', 'ru': 'Очередь: ', 'en': 'Turn: '},
+  'speaking': {'uz': ' gapiryapti', 'ru': ' говорит', 'en': ' is speaking'},
+  'nextPlayer': {'uz': "Keyingi o'yinchi", 'ru': 'Следующий игрок', 'en': 'Next player'},
+  'goToVote': {
+    'uz': 'Ovoz berishga o\'tish',
+    'ru': 'Перейти к голосованию',
+    'en': 'Go to voting',
+  },
+  'voteTitle': {'uz': 'Ovoz berish', 'ru': 'Голосование', 'en': 'Voting'},
+  'voteSub': {
+    'uz': "Eng ko'p ovoz olganni tanlang.",
+    'ru': 'Выберите набравшего больше голосов.',
+    'en': 'Choose who got the most votes.',
+  },
+  'voteAsk': {'uz': 'Kim chiqariladi?', 'ru': 'Кого исключаем?', 'en': 'Who is voted out?'},
+  'voteNote': {
+    'uz': "Hech kim tanlanmasa, hech kim chiqarilmaydi.",
+    'ru': 'Если никто не выбран, никто не выбывает.',
+    'en': 'If no one is chosen, no one is out.',
+  },
+  'finishVote': {'uz': 'Ovozni yakunlash', 'ru': 'Завершить голосование', 'en': 'Finish vote'},
+  'citizenWin': {'uz': 'Tinch aholi', 'ru': 'Мирные жители', 'en': 'Citizens'},
+  'mafiaWin': {'uz': 'Mafiya', 'ru': 'Мафия', 'en': 'Mafia'},
+  'winSuffix': {"uz": " g'alaba qildi!", 'ru': ' побеждает!', 'en': ' wins!'},
+  'newGame': {'uz': "Yangi o'yin", 'ru': 'Новая игра', 'en': 'New game'},
+  'alive': {'uz': 'Tirik', 'ru': 'Жив', 'en': 'Alive'},
+  'dead': {'uz': "O'lgan", 'ru': 'Мёртв', 'en': 'Dead'},
+  'settings': {'uz': 'Sozlamalar', 'ru': 'Настройки', 'en': 'Settings'},
+  'language': {'uz': 'Til', 'ru': 'Язык', 'en': 'Language'},
+  'close': {'uz': 'Yopish', 'ru': 'Закрыть', 'en': 'Close'},
+  'nightPeaceful': {
+    'uz': "Tun tinch o'tdi. Hech kim o'lmadi.",
+    'ru': 'Ночь прошла спокойно. Никто не погиб.',
+    'en': 'The night was peaceful. No one died.',
+  },
+  'nightSaved': {
+    'uz': "Mafiya hujum qildi, lekin doktor qutqardi! Hech kim o'lmadi.",
+    'ru': 'Мафия напала, но доктор спас! Никто не погиб.',
+    'en': 'The mafia attacked, but the doctor saved them! No one died.',
+  },
+  'nightKilled': {
+    'uz': " tunda o'ldirildi.\nRoli: ",
+    'ru': ' был убит ночью.\nРоль: ',
+    'en': ' was killed at night.\nRole: ',
+  },
+  'voteNoneOut': {'uz': 'Hech kim chiqarilmadi.', 'ru': 'Никто не выбыл.', 'en': 'No one was voted out.'},
+  'voteOut': {
+    'uz': ' ovoz berish bilan chiqarildi.\nRoli: ',
+    'ru': ' выбыл по голосованию.\nРоль: ',
+    'en': ' was voted out.\nRole: ',
+  },
+};
+
+extension _Tr on AppLang {
+  String t(String key) => _dict[key]?[name] ?? _dict[key]?['uz'] ?? key;
+}
+
 class MafiaApp extends StatelessWidget {
   const MafiaApp({super.key});
 
@@ -49,14 +224,13 @@ class MafiaApp extends StatelessWidget {
           useMaterial3: true,
           brightness: Brightness.dark,
           colorSchemeSeed: Colors.redAccent,
-          scaffoldBackgroundColor: const Color(0xFF140A0A),
+          scaffoldBackgroundColor: const Color(0xFF130A0D),
         ),
         home: const GamePage(),
       );
 }
 
 enum Stage { setup, reveal, night, info, talk, vote, end }
-
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
 
@@ -68,6 +242,7 @@ class _GamePageState extends State<GamePage> {
   Stage stage = Stage.setup;
   Stage after = Stage.talk;
   int room = 8;
+  AppLang lang = AppLang.uz;
   final names = <String>[];
   final ctrl = TextEditingController();
   List<Player> players = [];
@@ -84,6 +259,8 @@ class _GamePageState extends State<GamePage> {
   IconData infoIcon = Icons.wb_sunny;
   Color infoColor = Colors.amber;
 
+  String t(String key) => lang.t(key);
+
   List<Player> get alive => players.where((p) => p.alive).toList();
 
   @override
@@ -98,11 +275,11 @@ class _GamePageState extends State<GamePage> {
   void _startTimer(VoidCallback onEnd) {
     timer?.cancel();
     timeLeft = turnSeconds;
-    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+    timer = Timer.periodic(const Duration(seconds: 1), (tm) {
       if (!mounted) return;
       setState(() => timeLeft--);
       if (timeLeft <= 0) {
-        t.cancel();
+        tm.cancel();
         onEnd();
       }
     });
@@ -119,7 +296,7 @@ class _GamePageState extends State<GamePage> {
 
   void _fill() => setState(() {
         for (var i = names.length; i < room; i++) {
-          names.add('Ism ${i + 1}');
+          names.add('${i + 1}');
         }
       });
 
@@ -212,16 +389,17 @@ class _GamePageState extends State<GamePage> {
       IconData icon;
       Color color;
       if (k == null) {
-        msg = "Tun tinch o'tdi. Hech kim o'lmadi.";
+        msg = t('nightPeaceful');
         icon = Icons.nightlight_round;
         color = const Color(0xFF9FA8DA);
       } else if (k == saveTarget) {
-        msg = "Mafiya hujum qildi, lekin doktor qutqardi! Hech kim o'lmadi.";
+        msg = t('nightSaved');
         icon = Icons.health_and_safety;
         color = Colors.greenAccent;
       } else {
         k.alive = false;
-        msg = "№${players.indexOf(k) + 1} ${k.name} tunda o'ldirildi.\nRoli: ${k.role.title}";
+        msg =
+            '№${players.indexOf(k) + 1} ${k.name}${t('nightKilled')}${roleTitle(k.role, lang)}';
         icon = Icons.dangerous;
         color = Colors.redAccent;
       }
@@ -238,12 +416,13 @@ class _GamePageState extends State<GamePage> {
       IconData icon;
       Color color;
       if (v == null) {
-        msg = "Hech kim chiqarilmadi.";
+        msg = t('voteNoneOut');
         icon = Icons.how_to_vote;
         color = Colors.amber;
       } else {
         v.alive = false;
-        msg = "№${players.indexOf(v) + 1} ${v.name} ovoz berish bilan chiqarildi.\nRoli: ${v.role.title}";
+        msg =
+            '№${players.indexOf(v) + 1} ${v.name}${t('voteOut')}${roleTitle(v.role, lang)}';
         icon = Icons.gavel;
         color = Colors.orangeAccent;
       }
@@ -259,6 +438,72 @@ class _GamePageState extends State<GamePage> {
       players = [];
       stage = Stage.setup;
     });
+  }
+
+  // ---------- Sozlamalar ----------
+
+  void _openSettings() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1D1114),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            Row(children: [
+              const Icon(Icons.settings, color: Colors.redAccent),
+              const SizedBox(width: 10),
+              Text(t('settings'),
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
+            ]),
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(t('language'),
+                  style: const TextStyle(
+                      color: Colors.white70, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 8),
+            for (final l in AppLang.values)
+              ListTile(
+                onTap: () {
+                  setState(() => lang = l);
+                  setSheet(() {});
+                },
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  lang == l
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: lang == l ? Colors.redAccent : Colors.white38,
+                ),
+                title: Text(langName(l)),
+              ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(t('close')),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 
   // ---------- Umumiy vidjetlar ----------
@@ -352,7 +597,7 @@ class _GamePageState extends State<GamePage> {
 
   String _lbl(Player p, bool roles) {
     final s = '№${players.indexOf(p) + 1} ${p.name}';
-    return roles ? '$s · ${p.role.title}' : s;
+    return roles ? '$s · ${roleTitle(p.role, lang)}' : s;
   }
 
   Widget _pick(String label, IconData icon, Color color, Player? value,
@@ -386,7 +631,6 @@ class _GamePageState extends State<GamePage> {
           ]),
         ]),
       );
-
   // ---------- Stol ----------
 
   double _ang(int i, int n) => -math.pi / 2 + 2 * math.pi * i / n;
@@ -526,6 +770,12 @@ class _GamePageState extends State<GamePage> {
               : '$round-raund',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _openSettings,
+          ),
+        ],
       ),
       body: AnimatedContainer(
         duration: const Duration(milliseconds: 600),
@@ -540,7 +790,7 @@ class _GamePageState extends State<GamePage> {
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: KeyedSubtree(
-              key: ValueKey('$stage-$revealIndex-$revealed-$round-$speakIndex'),
+              key: ValueKey('$stage-$revealIndex-$revealed-$round-$speakIndex-${lang.name}'),
               child: body,
             ),
           ),
@@ -571,7 +821,7 @@ class _GamePageState extends State<GamePage> {
             Icon(icon, size: 32),
             const SizedBox(height: 6),
             Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text("$size o'yinchi",
+            Text('$size ${t('players')}',
                 style: const TextStyle(color: Colors.white70)),
           ]),
         ),
@@ -583,13 +833,17 @@ class _GamePageState extends State<GamePage> {
         const SizedBox(height: 40),
         Center(child: _hero(Icons.theater_comedy, Colors.redAccent)),
         const SizedBox(height: 16),
-        Text('MAFIYA',
+        Text(t('appTitle'),
             textAlign: TextAlign.center,
             style: _big?.copyWith(letterSpacing: 8)),
+        const SizedBox(height: 4),
+        Text(t('subtitle'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70)),
         const SizedBox(height: 20),
         Row(children: [
-          _roomCard(8, 'Oddiy xona', Icons.groups),
-          _roomCard(12, 'Pro xona', Icons.workspace_premium),
+          _roomCard(8, t('roomOddiy'), Icons.groups),
+          _roomCard(12, t('roomPro'), Icons.workspace_premium),
         ]),
         const SizedBox(height: 12),
         Row(children: [
@@ -598,7 +852,7 @@ class _GamePageState extends State<GamePage> {
               controller: ctrl,
               onSubmitted: (_) => _add(),
               decoration: InputDecoration(
-                hintText: "O'yinchi ismi",
+                hintText: t('nameHint'),
                 filled: true,
                 fillColor: Colors.white12,
                 prefixIcon: const Icon(Icons.person_add),
@@ -635,7 +889,7 @@ class _GamePageState extends State<GamePage> {
         const SizedBox(height: 8),
         Center(
           child: Text(
-            "O'yinchilar: ${names.length} / $room",
+            '${names.length} / $room',
             style: TextStyle(
               color: names.length == room ? Colors.greenAccent : Colors.white70,
             ),
@@ -643,9 +897,9 @@ class _GamePageState extends State<GamePage> {
         ),
         TextButton(
           onPressed: _fill,
-          child: const Text("Namuna ismlar bilan to'ldirish (sinash uchun)"),
+          child: Text(t('fillDemo')),
         ),
-        _btn("O'yinni boshlash", names.length == room ? _start : null),
+        _btn(t('startGame'), names.length == room ? _start : null),
       ]);
 
   Widget _reveal() {
@@ -665,30 +919,29 @@ class _GamePageState extends State<GamePage> {
           const SizedBox(height: 16),
           _hero(revealed ? roleIcon(p.role) : Icons.help_outline, c, size: 88),
           const SizedBox(height: 24),
-          Text(revealed ? p.role.title.toUpperCase() : p.name,
+          Text(revealed ? roleTitle(p.role, lang).toUpperCase() : p.name,
               textAlign: TextAlign.center,
               style: _big?.copyWith(color: revealed ? c : Colors.white)),
           const SizedBox(height: 12),
           if (!revealed) ...[
-            Text("Telefonni ${p.name}ga bering.\nBoshqalar qaramasin!",
+            Text(t('dontLook').replaceAll('%n', p.name),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white70, fontSize: 16)),
             const SizedBox(height: 32),
-            _btn("Rolimni ko'rish", () => setState(() => revealed = true)),
+            _btn(t('showRole'), () => setState(() => revealed = true)),
           ] else ...[
-            Text(p.role.hint,
+            Text(roleHint(p.role, lang),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16)),
             if (p.role == Role.mafia && mates.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
-                child: Text('Sheriklaringiz: $mates',
+                child: Text('${t('mates')}$mates',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.redAccent)),
               ),
             const SizedBox(height: 32),
-            _btn(last ? "Yetakchiga qaytaring" : "Yopish va keyingisiga",
-                _nextReveal),
+            _btn(last ? t('closeToLeader') : t('closeNext'), _nextReveal),
           ],
         ]),
       ),
@@ -696,18 +949,18 @@ class _GamePageState extends State<GamePage> {
   }
 
   Widget _night() => ListView(padding: const EdgeInsets.all(16), children: [
-        _head(Icons.nightlight_round, const Color(0xFF9FA8DA), 'Tun',
-            "Yetakchi: tanlovlarni kiriting.",
+        _head(Icons.nightlight_round, const Color(0xFF9FA8DA), t('nightTitle'),
+            t('nightSub'),
             timerOn: true),
         _table(roles: true),
-        _pick("Mafiya kimni o'ldiradi?", roleIcon(Role.mafia),
-            roleColor(Role.mafia), killTarget, (p) => killTarget = p,
+        _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
+            killTarget, (p) => killTarget = p,
             roles: true),
-        _pick("Doktor kimni qutqaradi?", roleIcon(Role.doctor),
-            roleColor(Role.doctor), saveTarget, (p) => saveTarget = p,
+        _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
+            saveTarget, (p) => saveTarget = p,
             roles: true),
-        _pick("Komissar kimni tekshiradi?", roleIcon(Role.sheriff),
-            roleColor(Role.sheriff), checkTarget, (p) => checkTarget = p,
+        _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
+            checkTarget, (p) => checkTarget = p,
             roles: true),
         if (checkTarget != null)
           _card(
@@ -721,15 +974,15 @@ class _GamePageState extends State<GamePage> {
               const SizedBox(width: 10),
               Text(
                 checkTarget!.role == Role.mafia
-                    ? 'Javob: MAFIYA'
-                    : "Javob: mafiya emas",
+                    ? t('answerMafia')
+                    : t('answerClean'),
                 style:
                     const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
             ]),
           ),
         const SizedBox(height: 8),
-        _btn('Tongni boshlash', _resolveNight),
+        _btn(t('startMorning'), _resolveNight),
         const SizedBox(height: 16),
       ]);
 
@@ -746,11 +999,10 @@ class _GamePageState extends State<GamePage> {
                     .headlineSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            Text("Tirik o'yinchilar: ${alive.length}",
+            Text('${t('aliveCount')}${alive.length}',
                 style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 28),
-            _btn(after == Stage.talk ? "Gaplashishga o'tish" : "Tunga o'tish",
-                _next),
+            _btn(after == Stage.talk ? t('goToTalk') : t('goToNight'), _next),
           ]),
         ),
       );
@@ -759,8 +1011,8 @@ class _GamePageState extends State<GamePage> {
     final sp = speakers[speakIndex];
     final last = speakIndex == speakers.length - 1;
     return ListView(padding: const EdgeInsets.all(16), children: [
-      _head(Icons.record_voice_over, Colors.amber, 'Gaplashish',
-          'Navbat: ${speakIndex + 1} / ${speakers.length}',
+      _head(Icons.record_voice_over, Colors.amber, t('talkTitle'),
+          '${t('turn')}${speakIndex + 1} / ${speakers.length}',
           timerOn: true),
       _table(speaker: sp),
       _card(
@@ -769,81 +1021,84 @@ class _GamePageState extends State<GamePage> {
           const Icon(Icons.mic, color: Colors.amber, size: 30),
           const SizedBox(width: 12),
           Expanded(
-            child: Text('${_lbl(sp, false)} gapiryapti',
+            child: Text('${_lbl(sp, false)}${t('speaking')}',
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
         ]),
       ),
-      _btn(last ? "Ovoz berishga o'tish" : "Keyingi o'yinchi",
-          _nextSpeaker),
+      _btn(last ? t('goToVote') : t('nextPlayer'), _nextSpeaker),
       const SizedBox(height: 16),
     ]);
   }
 
   Widget _vote() => ListView(padding: const EdgeInsets.all(16), children: [
-        _head(Icons.how_to_vote, Colors.orangeAccent, 'Ovoz berish',
-            "Eng ko'p ovoz olganni tanlang.",
+        _head(Icons.how_to_vote, Colors.orangeAccent, t('voteTitle'),
+            t('voteSub'),
             timerOn: true),
         _table(),
-        _pick('Kim chiqariladi?', Icons.how_to_vote, Colors.orangeAccent,
-            voteTarget, (p) => voteTarget = p),
-        const Padding(
-          padding: EdgeInsets.all(8),
-          child: Text("Hech kim tanlanmasa, hech kim chiqarilmaydi.",
+        _pick(t('voteAsk'), Icons.how_to_vote, Colors.orangeAccent, voteTarget,
+            (p) => voteTarget = p),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(t('voteNote'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70)),
+              style: const TextStyle(color: Colors.white70)),
         ),
-        _btn('Ovozni yakunlash', _resolveVote),
+        _btn(t('finishVote'), _resolveVote),
         const SizedBox(height: 16),
       ]);
 
-  Widget _end() => ListView(padding: const EdgeInsets.all(16), children: [
-        const SizedBox(height: 48),
-        Center(
-          child: _hero(
-            Icons.emoji_events,
-            winner == 'Mafiya' ? Colors.redAccent : Colors.greenAccent,
-          ),
+  Widget _end() {
+    final winTxt = winner == 'Mafiya' ? t('mafiaWin') : t('citizenWin');
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      const SizedBox(height: 48),
+      Center(
+        child: _hero(
+          Icons.emoji_events,
+          winner == 'Mafiya' ? Colors.redAccent : Colors.greenAccent,
         ),
-        const SizedBox(height: 16),
-        Text("$winner g'alaba qildi!", textAlign: TextAlign.center, style: _big),
-        const SizedBox(height: 8),
-        Text(message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70)),
-        const SizedBox(height: 16),
-        for (var i = 0; i < players.length; i++)
-          _card(
-            pad: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(children: [
-              CircleAvatar(
-                backgroundColor: roleColor(players[i].role).withAlpha(60),
-                child: Icon(roleIcon(players[i].role),
-                    color: roleColor(players[i].role)),
+      ),
+      const SizedBox(height: 16),
+      Text('$winTxt${t('winSuffix')}',
+          textAlign: TextAlign.center, style: _big),
+      const SizedBox(height: 8),
+      Text(message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70)),
+      const SizedBox(height: 16),
+      for (var i = 0; i < players.length; i++)
+        _card(
+          pad: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(children: [
+            CircleAvatar(
+              backgroundColor: roleColor(players[i].role).withAlpha(60),
+              child: Icon(roleIcon(players[i].role),
+                  color: roleColor(players[i].role)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('№${i + 1} ${players[i].name}',
+                      style: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.bold)),
+                  Text(roleTitle(players[i].role, lang),
+                      style: const TextStyle(color: Colors.white70)),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('№${i + 1} ${players[i].name}',
-                        style: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.bold)),
-                    Text(players[i].role.title,
-                        style: const TextStyle(color: Colors.white70)),
-                  ],
-                ),
-              ),
-              Text(players[i].alive ? 'Tirik' : "O'lgan",
-                  style: TextStyle(
-                      color: players[i].alive
-                          ? Colors.greenAccent
-                          : Colors.white38)),
-            ]),
-          ),
-        const SizedBox(height: 8),
-        _btn("Yangi o'yin", _reset),
-        const SizedBox(height: 16),
-      ]);
+            ),
+            Text(players[i].alive ? t('alive') : t('dead'),
+                style: TextStyle(
+                    color: players[i].alive
+                        ? Colors.greenAccent
+                        : Colors.white38)),
+          ]),
+        ),
+      const SizedBox(height: 8),
+      _btn(t('newGame'), _reset),
+      const SizedBox(height: 16),
+    ]);
+  }
 }
