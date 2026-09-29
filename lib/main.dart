@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'game.dart';
 
@@ -306,6 +307,7 @@ class _GamePageState extends State<GamePage> {
   int revealIndex = 0;
   bool revealed = false;
   bool sheriffResultRevealed = false;
+  bool soundEnabled = true;
   int round = 1;
   int timeLeft = turnSeconds;
   Timer? timer;
@@ -593,6 +595,91 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
+  // ---------- Xona boshqaruvi ----------
+
+  void _copyRoomId() {
+    Clipboard.setData(const ClipboardData(text: '123456'));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Xona ID nusxalandi: 123456')),
+    );
+  }
+
+  void _showRoomMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _panel,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.meeting_room, color: _cyan),
+            title: const Text('Xona ma\'lumotlari'),
+            subtitle: Text('Oddiy xona • $room o\'rin'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _copyRoomId();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.copy, color: _gold),
+            title: const Text('Xona ID sini nusxalash'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _copyRoomId();
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+
+  void _toggleSound() {
+    setState(() => soundEnabled = !soundEnabled);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(soundEnabled ? 'Ovoz yoqildi' : 'Ovoz o\'chirildi')),
+    );
+  }
+
+  void _showMoreMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _panel,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.copy, color: _cyan),
+            title: const Text('Xona ID sini nusxalash'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _copyRoomId();
+            },
+          ),
+          ListTile(
+            leading: Icon(soundEnabled ? Icons.volume_off : Icons.volume_up, color: _gold),
+            title: Text(soundEnabled ? 'Ovozni o\'chirish' : 'Ovozni yoqish'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _toggleSound();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings, color: _violet),
+            title: const Text('Sozlamalar'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _openSettings();
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+
   // ---------- Sozlamalar ----------
 
   void _openSettings() {
@@ -747,13 +834,17 @@ class _GamePageState extends State<GamePage> {
   Widget _gameHeader() => Padding(
         padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
         child: Row(children: [
-          Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle, color: Colors.black.withAlpha(130),
-              border: Border.all(color: Colors.white24),
+          InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: _showRoomMenu,
+            child: Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle, color: Colors.black.withAlpha(130),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: const Icon(Icons.keyboard_arrow_down, size: 30),
             ),
-            child: const Icon(Icons.keyboard_arrow_down, size: 30),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -764,18 +855,30 @@ class _GamePageState extends State<GamePage> {
                   style: const TextStyle(color: Colors.white70, fontSize: 12)),
             ]),
           ),
-          for (final icon in [
-            Icons.ios_share, Icons.volume_up, Icons.settings, Icons.more_horiz,
+          for (final action in <Map<String, Object>>[
+            {'icon': Icons.ios_share, 'tap': _copyRoomId},
+            {'icon': Icons.volume_up, 'tap': _toggleSound},
+            {'icon': Icons.settings, 'tap': _openSettings},
+            {'icon': Icons.more_horiz, 'tap': _showMoreMenu},
           ])
             Padding(
               padding: const EdgeInsets.only(left: 5),
-              child: Container(
-                width: 38, height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle, color: Colors.black.withAlpha(120),
-                  border: Border.all(color: Colors.white24),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(22),
+                onTap: action['tap'] as VoidCallback,
+                child: Container(
+                  width: 38, height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle, color: Colors.black.withAlpha(120),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Icon(
+                    action['icon'] == Icons.volume_up && !soundEnabled
+                        ? Icons.volume_off
+                        : action['icon'] as IconData,
+                    size: 19,
+                  ),
                 ),
-                child: Icon(icon, size: 19),
               ),
             ),
         ]),
