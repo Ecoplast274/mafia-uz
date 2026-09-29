@@ -772,7 +772,7 @@ class _GamePageState extends State<GamePage> {
                 width: 38, height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle, color: Colors.black.withAlpha(120),
-                  border: Border.all(color: Colors.white18),
+                  border: Border.all(color: Colors.white24),
                 ),
                 child: Icon(icon, size: 19),
               ),
