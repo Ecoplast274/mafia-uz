@@ -743,27 +743,169 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _head(IconData icon, Color color, String title, String sub,
-          {bool timerOn = false}) =>
-      Padding(
-        padding: const EdgeInsets.only(top: 56, bottom: 8),
+  Widget _gameHeader() => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
         child: Row(children: [
-          _hero(icon, color, size: 28),
-          const SizedBox(width: 12),
+          Container(
+            width: 42, height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle, color: Colors.black.withAlpha(130),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: const Icon(Icons.keyboard_arrow_down, size: 30),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w800)),
-              Text(sub,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              const Text('Mafia xonasi',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              Text('ID: 123456  •  👥 $room / ${players.length}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
             ]),
           ),
-          if (timerOn) _timerBadge(),
+          for (final icon in [
+            Icons.ios_share, Icons.volume_up, Icons.settings, Icons.more_horiz,
+          ])
+            Padding(
+              padding: const EdgeInsets.only(left: 5),
+              child: Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle, color: Colors.black.withAlpha(120),
+                  border: Border.all(color: Colors.white18),
+                ),
+                child: Icon(icon, size: 19),
+              ),
+            ),
         ]),
       );
+
+  Widget _phaseBanner({
+    required IconData icon,
+    required String title,
+    required String sub,
+    required Color color,
+  }) => Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [color.withAlpha(80), Colors.black.withAlpha(110)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: color.withAlpha(150)),
+            boxShadow: [BoxShadow(color: color.withAlpha(45), blurRadius: 18)],
+          ),
+          child: Column(children: [
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, color: color, size: 25),
+              const SizedBox(width: 8),
+              Text(title.toUpperCase(),
+                  style: TextStyle(color: color, fontSize: 22,
+                      fontWeight: FontWeight.w900, letterSpacing: 2)),
+            ]),
+            const SizedBox(height: 2),
+            Text(sub, style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 2),
+            Text('00:${timeLeft.toString().padLeft(2, '0')}',
+                style: TextStyle(
+                  color: timeLeft <= 10 ? Colors.redAccent : Colors.white,
+                  fontSize: 19, fontWeight: FontWeight.w900,
+                )),
+          ]),
+        ),
+      );
+
+  Widget _chatPanel() {
+    final sample = players.take(4).toList();
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha(145),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(children: [
+        for (var i = 0; i < sample.length; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(children: [
+              CircleAvatar(
+                radius: 11,
+                backgroundColor: avatarColors[i % avatarColors.length],
+                child: Text(ini(sample[i].name),
+                    style: const TextStyle(fontSize: 9)),
+              ),
+              const SizedBox(width: 7),
+              Text('${sample[i].name}:',
+                  style: TextStyle(
+                    color: avatarColors[i % avatarColors.length],
+                    fontWeight: FontWeight.w800,
+                  )),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  i == 0 ? 'Menimcha gumonli o‘yinchi bor.'
+                      : i == 1 ? 'Diqqat bilan kuzataylik.'
+                      : i == 2 ? 'Men hali ishonchim komil emas.'
+                      : 'Tinch ko‘rinyapti.',
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ]),
+          ),
+      ]),
+    );
+  }
+
+  Widget _bottomBar({required VoidCallback? onVote, required bool showVote}) =>
+      Padding(
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
+        child: Row(children: [
+          Expanded(child: _bottomAction(Icons.chat_bubble_outline, 'Chat', false, null)),
+          const SizedBox(width: 8),
+          Expanded(child: _bottomAction(Icons.mic, 'Gapirish', true, null)),
+          const SizedBox(width: 8),
+          Expanded(child: _bottomAction(Icons.how_to_vote, 'Ovoz berish', false,
+              showVote ? onVote : null)),
+          const SizedBox(width: 8),
+          Expanded(child: _bottomAction(Icons.card_giftcard, 'Sovg‘a', false, null)),
+        ]),
+      );
+
+  Widget _bottomAction(
+      IconData icon, String label, bool active, VoidCallback? onTap) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 62,
+          decoration: BoxDecoration(
+            gradient: active
+                ? const LinearGradient(
+                    colors: [Color(0xFFFF5964), Color(0xFFE52E4D)])
+                : null,
+            color: active ? null : Colors.black.withAlpha(145),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, size: 22),
+            const SizedBox(height: 3),
+            Text(label, style: const TextStyle(
+                fontSize: 11, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      );
+
+  Widget _head(IconData icon, Color color, String title, String sub,
+          {bool timerOn = false}) =>
+      Column(children: [
+        _gameHeader(),
+        _phaseBanner(icon: icon, title: title, sub: sub, color: color),
+      ]);
 
   String _lbl(Player p, bool roles) {
     final s = '№${players.indexOf(p) + 1} ${p.name}';
@@ -811,107 +953,108 @@ class _GamePageState extends State<GamePage> {
   Widget _seat(int i, double av, bool speaking, bool roles) {
     final p = players[i];
     final base = avatarColors[i % avatarColors.length];
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      Stack(clipBehavior: Clip.none, children: [
-        Container(
-          width: av,
-          height: av,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: p.alive ? base : Colors.grey.shade800,
-            border: Border.all(
-              color: speaking ? Colors.amber : Colors.white24,
-              width: speaking ? 4 : 2,
+    return SizedBox(
+      width: av + 32,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Stack(clipBehavior: Clip.none, children: [
+          Container(
+            width: av, height: av, alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                colors: p.alive
+                    ? [base.withAlpha(235), Colors.black.withAlpha(210)]
+                    : [Colors.grey.shade800, Colors.black],
+              ),
+              border: Border.all(
+                color: speaking ? Colors.amber : Colors.white24,
+                width: speaking ? 3.5 : 1.8),
+              boxShadow: speaking
+                  ? [BoxShadow(color: Colors.amber.withAlpha(150),
+                      blurRadius: 16, spreadRadius: 2)]
+                  : null,
             ),
-            boxShadow: speaking
-                ? [
-                    BoxShadow(
-                        color: Colors.amber.withAlpha(150),
-                        blurRadius: 14,
-                        spreadRadius: 2)
-                  ]
-                : null,
+            child: p.alive
+                ? Text(ini(p.name),
+                    style: TextStyle(fontSize: av * .38,
+                        fontWeight: FontWeight.w900))
+                : Icon(Icons.close, color: Colors.white38, size: av * .5),
           ),
-          child: p.alive
-              ? Text(ini(p.name),
-                  style: TextStyle(
-                      fontSize: av * 0.45, fontWeight: FontWeight.bold))
-              : Icon(Icons.close, color: Colors.white38, size: av * 0.6),
-        ),
-        Positioned(
-          left: -4,
-          top: -4,
-          child: CircleAvatar(
-            radius: 10,
-            backgroundColor: Colors.black87,
-            child: Text('${i + 1}',
-                style:
-                    const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-          ),
-        ),
-        if (speaking)
-          const Positioned(
-              right: -4,
-              bottom: -4,
-              child: Icon(Icons.mic, size: 20, color: Colors.amber)),
-        if (roles && p.alive)
           Positioned(
-              right: -4,
-              bottom: -4,
-              child: CircleAvatar(
-                radius: 10,
-                backgroundColor: Colors.black87,
-                child: Icon(roleIcon(p.role), size: 13, color: roleColor(p.role)),
-              )),
+            left: -3, top: -3,
+            child: Container(
+              width: 22, height: 22, alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle, color: Color(0xFF05060B)),
+              child: Text('${i + 1}',
+                  style: const TextStyle(fontSize: 10,
+                      fontWeight: FontWeight.w900)),
+            ),
+          ),
+          Positioned(
+            right: -3, bottom: -3,
+            child: Container(
+              width: 21, height: 21,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: speaking ? Colors.amber : Colors.black87),
+              child: Icon(speaking ? Icons.mic : Icons.mic_none,
+                  size: 13,
+                  color: speaking ? Colors.black : Colors.white70),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 3),
+        Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11,
+                fontWeight: speaking ? FontWeight.w800 : FontWeight.w500,
+                color: p.alive ? Colors.white : Colors.white38)),
       ]),
-      const SizedBox(height: 2),
-      Text(p.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-              fontSize: 11, color: p.alive ? Colors.white : Colors.white38)),
-    ]);
+    );
   }
 
   Widget _table({Player? speaker, bool roles = false}) {
     final n = players.length;
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final av = n > 8 ? 34.0 : 40.0;
-      final sw = av + 22;
+      final av = n > 10 ? 40.0 : 46.0;
+      final sw = av + 32;
       final rx = w / 2 - sw / 2;
-      final ry = w / 2 - av;
+      final ry = w / 2 - av - 4;
       return SizedBox(
-        width: w,
-        height: w,
+        width: w, height: math.min(w * .88, 430),
         child: Stack(children: [
           Center(
             child: Container(
-              width: w * 0.7,
-              height: w * 0.7,
-              alignment: Alignment.center,
+              width: w * .62, height: w * .62,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF18245A),
-                    const Color(0xFF0C1230),
-                  ],
-                ),
-                border: Border.all(color: _violet.withAlpha(190), width: 4),
+                gradient: const RadialGradient(colors: [
+                  Color(0xFF6E3217), Color(0xFF241006), Color(0xFF0A0707),
+                ]),
+                border: Border.all(color: Colors.white12, width: 2),
                 boxShadow: const [
-                  BoxShadow(
-                      color: Colors.black54, blurRadius: 20, spreadRadius: 2),
+                  BoxShadow(color: Colors.black87, blurRadius: 30, spreadRadius: 6),
                 ],
               ),
-              child: Text('MAFIYA',
-                  style: TextStyle(
-                    color: Colors.white.withAlpha(40),
-                    fontSize: w * 0.11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 4,
-                  )),
+              child: Center(
+                child: Container(
+                  width: w * .30, height: w * .30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withAlpha(95),
+                    border: Border.all(color: _gold.withAlpha(70)),
+                  ),
+                  child: const Center(
+                    child: Text('MAFIA',
+                        style: TextStyle(color: Color(0x66FFFFFF),
+                            fontSize: 22, fontWeight: FontWeight.w900,
+                            letterSpacing: 3)),
+                  ),
+                ),
+              ),
             ),
           ),
           for (var i = 0; i < n; i++)
@@ -930,14 +1073,10 @@ class _GamePageState extends State<GamePage> {
 
   List<Color> get _bg => switch (stage) {
         Stage.night => const [
-            Color(0xFF05060F),
-            Color(0xFF0E1A3D),
-            Color(0xFF1B2A5A),
+            Color(0xFF02040A), Color(0xFF081126), Color(0xFF182A52),
           ],
         Stage.talk || Stage.vote => const [
-            Color(0xFF2A1206),
-            Color(0xFF5A2E0C),
-            Color(0xFF8A4B14),
+            Color(0xFF070303), Color(0xFF35150A), Color(0xFF7A3D12),
           ],
         Stage.end => const [
             Color(0xFF120707),
@@ -1227,69 +1366,53 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _night() => ListView(padding: const EdgeInsets.all(16), children: [
-        _head(Icons.nightlight_round, const Color(0xFF9FA8DA), t('nightTitle'),
-            t('nightSub'),
-            timerOn: true),
-        _table(),
-        if (_roleAlive(Role.mafia))
-          _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
-              killTarget, (p) => killTarget = p,
-              excludeMafia: true),
-        if (_roleAlive(Role.doctor))
-          _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
-              saveTarget, (p) => saveTarget = p,
-              ),
-        if (_roleAlive(Role.sheriff))
-          _pick(
-            t('sheriffAsk'),
-            roleIcon(Role.sheriff),
-            roleColor(Role.sheriff),
-            checkTarget,
-            (p) {
-              checkTarget = p;
-              sheriffResultRevealed = false;
-            },
-            excludePlayer: players.firstWhere(
-              (p) => p.alive && p.role == Role.sheriff,
-            ),
-          ),
-        if (checkTarget != null)
-          _card(
-            color: Colors.blueAccent,
-            child: Column(
+  Widget _night() => ListView(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 14),
+        children: [
+          _head(Icons.nightlight_round, const Color(0xFF8FA7FF), 'TUN',
+              'Mafiya harakatlanmoqda...', timerOn: true),
+          _table(),
+          if (_roleAlive(Role.mafia))
+            _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
+                killTarget, (p) => killTarget = p, excludeMafia: true),
+          if (_roleAlive(Role.doctor))
+            _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
+                saveTarget, (p) => saveTarget = p),
+          if (_roleAlive(Role.sheriff))
+            _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
+              checkTarget, (p) {
+                checkTarget = p;
+                sheriffResultRevealed = false;
+              },
+              excludePlayer: players.firstWhere(
+                (p) => p.alive && p.role == Role.sheriff)),
+          if (checkTarget != null)
+            _card(color: Colors.blueAccent, child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.lock, color: Colors.blueAccent),
                 const SizedBox(height: 8),
                 Text(t('checkPrivate'),
                     style: const TextStyle(color: Colors.white70)),
-                const SizedBox(height: 10),
                 if (sheriffResultRevealed)
-                  Text(
-                    checkTarget!.role == Role.mafia
-                        ? t('answerMafia')
-                        : t('answerClean'),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      checkTarget!.role == Role.mafia
+                          ? t('answerMafia') : t('answerClean'),
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.w900)),
                   ),
                 _btn(
                   sheriffResultRevealed
-                      ? t('hideCheckResult')
-                      : t('showCheckResult'),
+                      ? t('hideCheckResult') : t('showCheckResult'),
                   () => setState(
-                      () => sheriffResultRevealed = !sheriffResultRevealed),
-                ),
+                      () => sheriffResultRevealed = !sheriffResultRevealed)),
               ],
-            ),
-          ),
-        const SizedBox(height: 8),
-        _btn(t('startMorning'), _resolveNight),
-        const SizedBox(height: 16),
-      ]);
+            )),
+          _btn(t('startMorning'), _resolveNight),
+        ],
+      );
 
   Widget _info() => Center(
         child: SingleChildScrollView(
@@ -1315,26 +1438,40 @@ class _GamePageState extends State<GamePage> {
   Widget _talk() {
     final sp = speakers[speakIndex];
     final last = speakIndex == speakers.length - 1;
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      _head(Icons.record_voice_over, Colors.amber, t('talkTitle'),
-          '${t('turn')}${speakIndex + 1} / ${speakers.length}',
-          timerOn: true),
-      _table(speaker: sp),
-      _card(
-        color: Colors.amber,
-        child: Row(children: [
-          const Icon(Icons.mic, color: Colors.amber, size: 30),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text('${_lbl(sp, false)}${t('speaking')}',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
-        ]),
-      ),
-      _btn(last ? t('goToVote') : t('nextPlayer'), _nextSpeaker),
-      const SizedBox(height: 16),
-    ]);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 14),
+      children: [
+        _head(Icons.wb_sunny, _gold, 'KUN',
+            'Muhokama bosqichi  •  ${t('turn')}${speakIndex + 1}/${speakers.length}',
+            timerOn: true),
+        _card(
+          pad: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: _gold,
+          child: Row(children: [
+            const Icon(Icons.diamond, color: _gold),
+            const SizedBox(width: 8),
+            Expanded(child: Text(
+              room == 12 ? 'Pro xona (12)' : 'Oddiy xona ($room)',
+              style: const TextStyle(fontWeight: FontWeight.w800))),
+            const Icon(Icons.workspace_premium, color: _gold),
+          ]),
+        ),
+        _table(speaker: sp),
+        _chatPanel(),
+        _card(
+          color: _gold,
+          child: Row(children: [
+            const Icon(Icons.mic, color: _gold, size: 28),
+            const SizedBox(width: 10),
+            Expanded(child: Text('${sp.name} gapiryapti',
+                style: const TextStyle(fontSize: 17,
+                    fontWeight: FontWeight.w800))),
+          ]),
+        ),
+        _btn(last ? t('goToVote') : t('nextPlayer'), _nextSpeaker),
+        _bottomBar(onVote: _toVote, showVote: true),
+      ],
+    );
   }
 
   Widget _vote() {
