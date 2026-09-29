@@ -165,6 +165,9 @@ const Map<String, Map<String, String>> _dict = {
     'en': 'Go to voting',
   },
   'voteTitle': {'uz': 'Ovoz berish', 'ru': 'Голосование', 'en': 'Voting'},
+  'voter': {'uz': 'Ovoz beruvchi: ', 'ru': 'Голосует: ', 'en': 'Voting: '},
+  'nextVoter': {'uz': 'Keyingi ovoz', 'ru': 'Следующий голос', 'en': 'Next vote'},
+  'voteTie': {'uz': 'Ovozlar teng bo\'ldi. Hech kim chiqarilmadi.', 'ru': 'Голоса разделились поровну. Никто не выбыл.', 'en': 'The vote was tied. No one was eliminated.'},
   'voteSub': {
     'uz': "Eng ko'p ovoz olganni tanlang.",
     'ru': 'Выберите набравшего больше голосов.',
@@ -254,6 +257,9 @@ class _GamePageState extends State<GamePage> {
   int timeLeft = turnSeconds;
   Timer? timer;
   Player? killTarget, saveTarget, checkTarget, voteTarget;
+  List<Player> voters = [];
+  int voteIndex = 0;
+  final Map<Player, int> voteCounts = {};
   String message = '';
   String? winner;
   IconData infoIcon = Icons.wb_sunny;
@@ -390,7 +396,17 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _toVote() {
+    timer?.cancel();
+    voters = alive.toList();
+    voteIndex = 0;
     voteTarget = null;
+    voteCounts.clear();
+
+    if (voters.isEmpty) {
+      _toNight();
+      return;
+    }
+
     setState(() => stage = Stage.vote);
     _startTimer(_resolveVote);
   }
@@ -443,24 +459,52 @@ class _GamePageState extends State<GamePage> {
 
   void _resolveVote() {
     timer?.cancel();
+
+    final voter = voters.isEmpty ? null : voters[voteIndex];
+    final target = voteTarget;
+    if (voter != null && target != null && target != voter && target.alive) {
+      voteCounts[target] = (voteCounts[target] ?? 0) + 1;
+    }
+
+    voteTarget = null;
+
+    if (voter != null && voteIndex < voters.length - 1) {
+      setState(() => voteIndex++);
+      _startTimer(_resolveVote);
+      return;
+    }
+
+    final maxVotes = voteCounts.values.isEmpty
+        ? 0
+        : voteCounts.values.reduce(math.max);
+    final leaders = voteCounts.entries
+        .where((e) => e.value == maxVotes && maxVotes > 0)
+        .map((e) => e.key)
+        .toList();
+
     setState(() {
-      final v = voteTarget;
       String msg;
       IconData icon;
       Color color;
-      if (v == null) {
-        msg = t('voteNoneOut');
+
+      if (leaders.length != 1) {
+        msg = leaders.isEmpty ? t('voteNoneOut') : t('voteTie');
         icon = Icons.how_to_vote;
         color = Colors.amber;
       } else {
+        final v = leaders.single;
         v.alive = false;
         msg =
             '№${players.indexOf(v) + 1} ${v.name}${t('voteOut')}${roleTitle(v.role, lang)}';
         icon = Icons.gavel;
         color = Colors.orangeAccent;
       }
+
       round++;
       _clearTargets();
+      voters = [];
+      voteIndex = 0;
+      voteCounts.clear();
       _show(msg, Stage.night, icon, color);
     });
   }
@@ -477,6 +521,9 @@ class _GamePageState extends State<GamePage> {
       message = '';
       speakers = [];
       speakIndex = 0;
+      voters = [];
+      voteIndex = 0;
+      voteCounts.clear();
       _clearTargets();
     });
   }
@@ -643,7 +690,7 @@ class _GamePageState extends State<GamePage> {
 
   Widget _pick(String label, IconData icon, Color color, Player? value,
           ValueChanged<Player?> on,
-          {bool roles = false, bool excludeMafia = false}) =>
+          {bool roles = false, bool excludeMafia = false, Player? excludePlayer}) =>
       _card(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -658,7 +705,9 @@ class _GamePageState extends State<GamePage> {
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final p in alive.where(
-                (p) => !excludeMafia || p.role != Role.mafia))
+                (p) =>
+                    (!excludeMafia || p.role != Role.mafia) &&
+                    (excludePlayer == null || p != excludePlayer)))
               ChoiceChip(
                 avatar: CircleAvatar(
                   backgroundColor:
@@ -1119,22 +1168,32 @@ class _GamePageState extends State<GamePage> {
     ]);
   }
 
-  Widget _vote() => ListView(padding: const EdgeInsets.all(16), children: [
-        _head(Icons.how_to_vote, Colors.orangeAccent, t('voteTitle'),
-            t('voteSub'),
-            timerOn: true),
-        _table(),
-        _pick(t('voteAsk'), Icons.how_to_vote, Colors.orangeAccent, voteTarget,
-            (p) => voteTarget = p),
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Text(t('voteNote'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70)),
-        ),
-        _btn(t('finishVote'), _resolveVote),
-        const SizedBox(height: 16),
-      ]);
+  Widget _vote() {
+    final voter = voters[voteIndex];
+    final last = voteIndex == voters.length - 1;
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      _head(Icons.how_to_vote, Colors.orangeAccent, t('voteTitle'),
+          '${t('voter')}${_lbl(voter, false)}',
+          timerOn: true),
+      _table(speaker: voter),
+      _pick(
+        t('voteAsk'),
+        Icons.how_to_vote,
+        Colors.orangeAccent,
+        voteTarget,
+        (p) => voteTarget = p,
+        excludePlayer: voter,
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8),
+        child: Text(t('voteNote'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70)),
+      ),
+      _btn(last ? t('finishVote') : t('nextVoter'), _resolveVote),
+      const SizedBox(height: 16),
+    ]);
+  }
 
   Widget _end() {
     final winTxt = winner == 'Mafiya' ? t('mafiaWin') : t('citizenWin');
