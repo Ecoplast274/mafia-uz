@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/game.dart';
+import 'package:mafia_uz/game.dart';
 
 void main() {
   test('4-player minimum room gets one mafia, doctor and sheriff', () {
