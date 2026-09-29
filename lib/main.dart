@@ -261,6 +261,13 @@ class _GamePageState extends State<GamePage> {
 
   String t(String key) => lang.t(key);
 
+  @override
+  void dispose() {
+    timer?.cancel();
+    ctrl.dispose();
+    super.dispose();
+  }
+
   List<Player> get alive => players.where((p) => p.alive).toList();
 
   bool _roleAlive(Role role) =>
@@ -292,7 +299,10 @@ class _GamePageState extends State<GamePage> {
 
   void _add() {
     final n = ctrl.text.trim();
-    if (n.isEmpty || names.contains(n) || names.length >= room) return;
+    final duplicate = names.any(
+      (x) => x.trim().toLowerCase() == n.toLowerCase(),
+    );
+    if (n.isEmpty || duplicate || names.length >= room) return;
     setState(() => names.add(n));
     ctrl.clear();
   }
