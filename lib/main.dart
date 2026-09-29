@@ -311,6 +311,7 @@ class _GamePageState extends State<GamePage> {
   bool revealed = false;
   bool sheriffResultRevealed = false;
   bool soundEnabled = true;
+  AudioPlayer? _musicPlayer;
   int round = 1;
   int timeLeft = turnSeconds;
   Timer? timer;
@@ -325,9 +326,27 @@ class _GamePageState extends State<GamePage> {
 
   String t(String key) => lang.t(key);
 
+  Future<void> _startMusic() async {
+    if (!soundEnabled) return;
+    _musicPlayer ??= AudioPlayer();
+    await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
+    await _musicPlayer!.setVolume(0.16);
+    await _musicPlayer!.play(
+      BytesSource(
+        base64Decode(mafiaMusicBase64),
+        mimeType: 'audio/wav',
+      ),
+    );
+  }
+
+  Future<void> _stopMusic() async {
+    await _musicPlayer?.stop();
+  }
+
   @override
   void dispose() {
     timer?.cancel();
+    _musicPlayer?.dispose();
     ctrl.dispose();
     super.dispose();
   }
