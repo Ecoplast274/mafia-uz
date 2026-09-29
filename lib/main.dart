@@ -138,6 +138,8 @@ const Map<String, Map<String, String>> _dict = {
     'en': 'Who does the sheriff check?',
   },
   'answerMafia': {'uz': 'Javob: MAFIYA', 'ru': 'Ответ: МАФИЯ', 'en': 'Answer: MAFIA'},
+  'showCheckResult': {'uz': "Komissar natijasini ko'rish", 'ru': 'Показать результат проверки', 'en': 'Show sheriff result'},
+  'checkPrivate': {'uz': 'Telefonni faqat komissarga bering. Natijani boshqalarga ko\'rsatmang.', 'ru': 'Передайте телефон только комиссару. Не показывайте результат другим.', 'en': 'Give the phone only to the sheriff. Do not show the result to others.'},
   'answerClean': {
     'uz': "Javob: mafiya emas",
     'ru': 'Ответ: не мафия',
@@ -253,6 +255,7 @@ class _GamePageState extends State<GamePage> {
   int speakIndex = 0;
   int revealIndex = 0;
   bool revealed = false;
+  bool sheriffResultRevealed = false;
   int round = 1;
   int timeLeft = turnSeconds;
   Timer? timer;
@@ -326,6 +329,7 @@ class _GamePageState extends State<GamePage> {
       ];
       revealIndex = 0;
       revealed = false;
+      sheriffResultRevealed = false;
       round = 1;
       winner = null;
       _clearTargets();
@@ -1085,37 +1089,41 @@ class _GamePageState extends State<GamePage> {
         _head(Icons.nightlight_round, const Color(0xFF9FA8DA), t('nightTitle'),
             t('nightSub'),
             timerOn: true),
-        _table(roles: true),
+        _table(),
         if (_roleAlive(Role.mafia))
           _pick(t('mafiaAsk'), roleIcon(Role.mafia), roleColor(Role.mafia),
               killTarget, (p) => killTarget = p,
-              roles: true, excludeMafia: true),
+              excludeMafia: true),
         if (_roleAlive(Role.doctor))
           _pick(t('doctorAsk'), roleIcon(Role.doctor), roleColor(Role.doctor),
               saveTarget, (p) => saveTarget = p,
-              roles: true),
+              ),
         if (_roleAlive(Role.sheriff))
           _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
               checkTarget, (p) => checkTarget = p,
               roles: true),
         if (checkTarget != null)
           _card(
-            color: checkTarget!.role == Role.mafia
-                ? Colors.redAccent
-                : Colors.greenAccent,
-            child: Row(children: [
-              Icon(checkTarget!.role == Role.mafia
-                  ? Icons.warning_amber
-                  : Icons.verified),
-              const SizedBox(width: 10),
-              Text(
-                checkTarget!.role == Role.mafia
-                    ? t('answerMafia')
-                    : t('answerClean'),
-                style:
-                    const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ),
-            ]),
+            color: Colors.blueAccent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.lock, color: Colors.blueAccent),
+                const SizedBox(height: 8),
+                Text(t('checkPrivate'),
+                    style: const TextStyle(color: Colors.white70)),
+                const SizedBox(height: 10),
+                _btn(
+                  sheriffResultRevealed
+                      ? (checkTarget!.role == Role.mafia
+                          ? t('answerMafia')
+                          : t('answerClean'))
+                      : t('showCheckResult'),
+                  () => setState(
+                      () => sheriffResultRevealed = !sheriffResultRevealed),
+                ),
+              ],
+            ),
           ),
         const SizedBox(height: 8),
         _btn(t('startMorning'), _resolveNight),
