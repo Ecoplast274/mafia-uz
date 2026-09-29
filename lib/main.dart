@@ -443,7 +443,7 @@ class _GamePageState extends State<GamePage> {
       winner = null;
       message = '';
       speakers = [];
-      speakerIndex = 0;
+      speakIndex = 0;
       _clearTargets();
     });
   }
