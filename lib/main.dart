@@ -145,6 +145,16 @@ const Map<String, Map<String, String>> _dict = {
     'ru': 'Ответ: не мафия',
     'en': 'Answer: not mafia',
   },
+  'hideCheckResult': {
+    'uz': "Natijani yashirish",
+    'ru': 'Скрыть результат',
+    'en': 'Hide result',
+  },
+  'mafiaDeadNight': {
+    'uz': "Mafiya tirik emas. Tun tinch o'tdi.",
+    'ru': 'Мафия не жива. Ночь прошла спокойно.',
+    'en': 'No mafia is alive. The night was peaceful.',
+  },
   'startMorning': {'uz': 'Tongni boshlash', 'ru': 'Начать утро', 'en': 'Start morning'},
   'aliveCount': {
     'uz': "Tirik o'yinchilar: ",
@@ -384,7 +394,17 @@ class _GamePageState extends State<GamePage> {
   void _toTalk() {
     timer?.cancel();
 
+    final currentWinner = checkWinner(players);
+    if (currentWinner != null) {
+      setState(() {
+        winner = currentWinner;
+        stage = Stage.end;
+      });
+      return;
+    }
+
     if (alive.isEmpty) {
+      _toNight();
       return;
     }
 
@@ -458,7 +478,7 @@ class _GamePageState extends State<GamePage> {
       if (k == null) {
         msg = _roleAlive(Role.mafia)
             ? t('nightPeaceful')
-            : "Mafiya tirik emas. " + t('nightPeaceful');
+            : t('mafiaDeadNight');
         icon = Icons.nightlight_round;
         color = const Color(0xFF9FA8DA);
       } else if (k == saveTarget) {
@@ -536,6 +556,7 @@ class _GamePageState extends State<GamePage> {
       stage = Stage.setup;
       revealIndex = 0;
       revealed = false;
+      sheriffResultRevealed = false;
       round = 1;
       winner = null;
       message = '';
@@ -1197,9 +1218,19 @@ class _GamePageState extends State<GamePage> {
               saveTarget, (p) => saveTarget = p,
               ),
         if (_roleAlive(Role.sheriff))
-          _pick(t('sheriffAsk'), roleIcon(Role.sheriff), roleColor(Role.sheriff),
-              checkTarget, (p) => checkTarget = p,
-              ),
+          _pick(
+            t('sheriffAsk'),
+            roleIcon(Role.sheriff),
+            roleColor(Role.sheriff),
+            checkTarget,
+            (p) => setState(() {
+              checkTarget = p;
+              sheriffResultRevealed = false;
+            }),
+            excludePlayer: players.firstWhere(
+              (p) => p.alive && p.role == Role.sheriff,
+            ),
+          ),
         if (checkTarget != null)
           _card(
             color: Colors.blueAccent,
