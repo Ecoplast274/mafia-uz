@@ -26,7 +26,7 @@ jobs:
 
       - name: Android loyihasini yaratish
         run: |
-          flutter create --platforms=android --org uz.inoyat --project-name mafia_uz .
+          flutter create --platforms=android --org uz.inoyat --project-name mafia_uz --no-pub .
           sed -i 's/android:label="[^"]*"/android:label="Mafiya"/' android/app/src/main/AndroidManifest.xml
 
       - run: flutter pub get
