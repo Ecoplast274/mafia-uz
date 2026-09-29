@@ -903,35 +903,51 @@ class _GamePageState extends State<GamePage> {
     required String sub,
     required Color color,
   }) => Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color.withAlpha(80), Colors.black.withAlpha(110)],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color.withAlpha(70), Colors.black.withAlpha(105)],
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: color.withAlpha(135)),
+              boxShadow: [BoxShadow(color: color.withAlpha(38), blurRadius: 12)],
             ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: color.withAlpha(150)),
-            boxShadow: [BoxShadow(color: color.withAlpha(45), blurRadius: 18)],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(icon, color: color, size: 17),
+                  const SizedBox(width: 6),
+                  Text(title.toUpperCase(),
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      )),
+                ]),
+                const SizedBox(height: 1),
+                Text(
+                  sub,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                ),
+                Text(
+                  '00:${timeLeft.toString().padLeft(2, '0')}',
+                  style: TextStyle(
+                    color: timeLeft <= 10 ? Colors.redAccent : Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(children: [
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(title.toUpperCase(),
-                  style: TextStyle(color: color, fontSize: 18,
-                      fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-            ]),
-            const SizedBox(height: 2),
-            Text(sub,
-                style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(height: 1),
-            Text('00:${timeLeft.toString().padLeft(2, '0')}',
-                style: TextStyle(
-                  color: timeLeft <= 10 ? Colors.redAccent : Colors.white,
-                  fontSize: 17, fontWeight: FontWeight.w900,
-                )),
-          ]),
         ),
       );
 
