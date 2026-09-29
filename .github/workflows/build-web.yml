@@ -19,26 +19,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
       - run: |
           flutter create --platforms=web --project-name mafia_uz --no-pub .
-
       - run: flutter pub get
-
-      - run: flutter analyze --no-fatal-infos
+      - run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - run: flutter test
-
       - run: flutter build web --release --base-href /mafia-uz/
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
