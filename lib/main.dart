@@ -330,23 +330,6 @@ class _GamePageState extends State<GamePage> {
     await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
     await _musicPlayer!.setVolume(0.16);
     await _musicPlayer!.play(
-      BytesSource(
-        base64Decode(mafiaMusicBase64),
-        mimeType: 'audio/wav',
-      ),
-    );
-  }
-
-  Future<void> _stopMusic() async {
-    await _musicPlayer?.stop();
-  }
-
-  Future<void> _startMusic() async {
-    if (!soundEnabled) return;
-    _musicPlayer ??= AudioPlayer();
-    await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
-    await _musicPlayer!.setVolume(0.16);
-    await _musicPlayer!.play(
       UrlSource('https://raw.githubusercontent.com/uncle-sheepsky/duru-ai-cc0-bgm/main/mp3/duru-rondo.mp3'),
     );
   }
