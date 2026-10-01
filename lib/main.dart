@@ -4,9 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'firebase_bootstrap.dart';
+import 'online_lobby.dart';
 import 'game.dart';
 
-void main() => runApp(const MafiaApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeFirebaseFromEnvironment();
+  runApp(const MafiaApp());
+}
 
 const turnSeconds = 30;
 
@@ -1506,6 +1512,34 @@ class _GamePageState extends State<GamePage> {
         ),
       );
 
+  Widget _onlineCard() => _card(
+        pad: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            const Icon(Icons.public, color: _cyan),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ONLINE MULTIPLAYER',
+                      style: TextStyle(fontWeight: FontWeight.w900)),
+                  SizedBox(height: 3),
+                  Text('8/12 kishilik xona • kod bilan ulanish',
+                      style: TextStyle(color: Colors.white60, fontSize: 12)),
+                ],
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const OnlineLobbyPage()),
+              ),
+              child: const Text('KIRISH'),
+            ),
+          ],
+        ),
+      );
+
   Widget _roomCard(int size, String title, IconData icon) {
     final on = room == size;
     return Expanded(
@@ -1549,7 +1583,9 @@ class _GamePageState extends State<GamePage> {
           textAlign: TextAlign.center,
           style: const TextStyle(color: Colors.white60, fontSize: 14, letterSpacing: 0.4),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 18),
+        _onlineCard(),
+        const SizedBox(height: 12),
         Row(children: [
           _roomCard(8, t('roomOddiy'), Icons.groups),
           _roomCard(12, t('roomPro'), Icons.workspace_premium),
