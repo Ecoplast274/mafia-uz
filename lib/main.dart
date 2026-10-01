@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'firebase_bootstrap.dart';
 import 'online_lobby.dart';
 import 'game.dart';
+import 'online_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -308,6 +309,10 @@ class _GamePageState extends State<GamePage> {
   AppLang lang = AppLang.uz;
   final names = <String>[];
   final ctrl = TextEditingController();
+  final online = MafiaOnlineService.instance;
+  String? onlineRoomId;
+  bool onlineHost = false;
+  bool onlineBusy = false;
   List<Player> players = [];
   List<Player> speakers = [];
   int speakIndex = 0;
@@ -1358,6 +1363,250 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
+
+  // ---------- Online xona ----------
+
+  Future<void> _openOnlineRoom() async {
+    if (!online.initialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Online rejim uchun Firebase client konfiguratsiyasi hali ulanmagan.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final nameCtrl = TextEditingController();
+    final roomCtrl = TextEditingController();
+    var selectedSize = room;
+    var modeCreate = true;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: _panel,
+          title: const Text('Online xona'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  maxLength: 20,
+                  decoration: const InputDecoration(
+                    labelText: 'Ismingiz',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(value: true, label: Text('Yaratish')),
+                    ButtonSegment(value: false, label: Text('Qo‘shilish')),
+                  ],
+                  selected: {modeCreate},
+                  onSelectionChanged: (v) =>
+                      setDialogState(() => modeCreate = v.first),
+                ),
+                if (modeCreate) ...[
+                  const SizedBox(height: 10),
+                  SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(value: 8, label: Text('8')),
+                      ButtonSegment(value: 12, label: Text('12')),
+                    ],
+                    selected: {selectedSize},
+                    onSelectionChanged: (v) =>
+                        setDialogState(() => selectedSize = v.first),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: roomCtrl,
+                    maxLength: 6,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      labelText: 'Xona kodi',
+                      hintText: 'ABC234',
+                      prefixIcon: Icon(Icons.meeting_room),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: onlineBusy ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Bekor qilish'),
+            ),
+            FilledButton(
+              onPressed: onlineBusy
+                  ? null
+                  : () async {
+                      final name = nameCtrl.text.trim();
+                      if (name.length < 2) return;
+                      setState(() => onlineBusy = true);
+                      try {
+                        if (modeCreate) {
+                          onlineRoomId = await online.createRoom(
+                            size: selectedSize,
+                            name: name,
+                          );
+                          onlineHost = true;
+                        } else {
+                          final id = roomCtrl.text.trim().toUpperCase();
+                          await online.joinRoom(roomId: id, name: name);
+                          onlineRoomId = id;
+                          onlineHost = false;
+                        }
+                        if (mounted) Navigator.pop(dialogContext);
+                        if (mounted) _showOnlineLobby();
+                      } on FirebaseFunctionsException catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            SnackBar(content: Text(e.message ?? e.code)),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            SnackBar(content: Text(e.toString())),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => onlineBusy = false);
+                      }
+                    },
+              child: Text(modeCreate ? 'Xona yaratish' : 'Qo‘shilish'),
+            ),
+          ],
+        ),
+      ),
+    );
+    nameCtrl.dispose();
+    roomCtrl.dispose();
+  }
+
+  void _showOnlineLobby() {
+    final roomId = onlineRoomId;
+    if (roomId == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _panel,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(sheetContext).size.height * .72,
+          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: online.playersStream(roomId),
+            builder: (context, snapshot) {
+              final docs = snapshot.data?.docs ?? const [];
+              return Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.cloud_done, color: _cyan),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Online lobby',
+                            style: TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Clipboard.setData(
+                            ClipboardData(text: roomId),
+                          ),
+                          icon: const Icon(Icons.copy),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Xona kodi: $roomId',
+                      style: const TextStyle(
+                        color: _cyan,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Expanded(
+                      child: snapshot.hasError
+                          ? Center(child: Text('Lobby xatosi: \${snapshot.error}'))
+                          : ListView.builder(
+                              itemCount: docs.length,
+                              itemBuilder: (_, i) {
+                                final p = docs[i].data();
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor:
+                                        avatarColors[i % avatarColors.length],
+                                    child: Text('\${i + 1}'),
+                                  ),
+                                  title: Text('\${p['name'] ?? 'Player'}'),
+                                  subtitle: Text(
+                                    i == 0 ? 'Yetakchi' : 'O‘yinchi',
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    if (onlineHost)
+                      FilledButton.icon(
+                        onPressed: docs.length < 8
+                            ? null
+                            : () async {
+                                try {
+                                  await online.startGame(roomId);
+                                  if (mounted) Navigator.pop(sheetContext);
+                                } on FirebaseFunctionsException catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(this.context)
+                                        .showSnackBar(
+                                      SnackBar(
+                                        content: Text(e.message ?? e.code),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('O‘yinni boshlash'),
+                      ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        try {
+                          await online.leaveRoom(roomId);
+                        } catch (_) {}
+                        if (mounted) Navigator.pop(sheetContext);
+                      },
+                      icon: const Icon(Icons.exit_to_app),
+                      label: const Text('Xonadan chiqish'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   // ---------- Ekranlar ----------
 
   List<Color> get _bg => switch (stage) {
@@ -1666,6 +1915,19 @@ class _GamePageState extends State<GamePage> {
           child: Text(t('fillDemo')),
         ),
         _btn(t('startGame'), names.length == room ? _start : null),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _openOnlineRoom,
+          icon: Icon(
+            online.initialized ? Icons.cloud_done : Icons.cloud_off,
+            color: online.initialized ? _cyan : Colors.white54,
+          ),
+          label: Text(
+            online.initialized
+                ? 'ONLINE XONA'
+                : 'ONLINE XONA (CONFIG KUTILMOQDA)',
+          ),
+        ),
       ]);
 
   Widget _reveal() {
