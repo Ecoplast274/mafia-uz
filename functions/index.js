@@ -197,10 +197,17 @@ exports.submitAction = onCall(async request => {
     if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
     const room = roomSnap.data();
     const actorRef = roomRef.collection("private").doc(uid);
+    const actorPlayerRef = roomRef.collection("players").doc(uid);
     const targetRef = roomRef.collection("players").doc(targetUid);
     const actor = await tx.get(actorRef);
+    const actorPlayer = await tx.get(actorPlayerRef);
     const target = await tx.get(targetRef);
-    if (!actor.exists || !target.exists) throw new HttpsError("not-found", "Game data not found.");
+    if (!actor.exists || !actorPlayer.exists || !target.exists) {
+      throw new HttpsError("not-found", "Game data not found.");
+    }
+    if (!actorPlayer.data().alive) {
+      throw new HttpsError("failed-precondition", "Dead players cannot act.");
+    }
     if (!target.data().alive) throw new HttpsError("failed-precondition", "Target is dead.");
 
     const role = actor.data().role;
@@ -233,6 +240,9 @@ exports.resolveNight = onCall(async request => {
     const snap = await tx.get(roomRef);
     if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
     const current = snap.data();
+    if (current.hostUid !== uid) {
+      throw new HttpsError("permission-denied", "Only the host can resolve the night.");
+    }
     if (current.phase !== "night") {
       throw new HttpsError("failed-precondition", "Not a night phase.");
     }
@@ -296,7 +306,11 @@ exports.startVote = onCall(async request => {
   await db.runTransaction(async tx => {
     const snap = await tx.get(roomRef);
     if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
-    if (snap.data().phase !== "talk") throw new HttpsError("failed-precondition", "Not a talk phase.");
+    const room = snap.data();
+    if (room.hostUid !== uid) {
+      throw new HttpsError("permission-denied", "Only the host can start voting.");
+    }
+    if (room.phase !== "talk") throw new HttpsError("failed-precondition", "Not a talk phase.");
     tx.update(roomRef, { phase: "vote", updatedAt: FieldValue.serverTimestamp() });
   });
   return { ok: true, phase: "vote" };
@@ -311,6 +325,9 @@ exports.resolveVote = onCall(async request => {
     const snap = await tx.get(roomRef);
     if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
     const current = snap.data();
+    if (current.hostUid !== uid) {
+      throw new HttpsError("permission-denied", "Only the host can resolve the vote.");
+    }
     if (current.phase !== "vote") {
       throw new HttpsError("failed-precondition", "Not a vote phase.");
     }
