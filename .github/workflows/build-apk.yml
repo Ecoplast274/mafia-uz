@@ -29,9 +29,23 @@ jobs:
       - run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - run: flutter test
       - name: Release APK
-        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
+        run: |
+          flutter build apk --release --obfuscate --split-debug-info=build/symbols \
+            --dart-define=FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
+            --dart-define=FIREBASE_APP_ID="${{ secrets.FIREBASE_ANDROID_APP_ID }}" \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" \
+            --dart-define=FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
+            --dart-define=FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}" \
+            --dart-define=FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}"
       - name: Release AAB
-        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
+        run: |
+          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols \
+            --dart-define=FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
+            --dart-define=FIREBASE_APP_ID="${{ secrets.FIREBASE_ANDROID_APP_ID }}" \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" \
+            --dart-define=FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
+            --dart-define=FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}" \
+            --dart-define=FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}"
       - name: Release yaratish
         uses: softprops/action-gh-release@v2
         with:
