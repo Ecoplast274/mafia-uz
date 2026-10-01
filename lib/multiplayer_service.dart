@@ -19,7 +19,7 @@ class OnlinePlayer {
   factory OnlinePlayer.fromMap(String uid, Map<String, dynamic> data) {
     return OnlinePlayer(
       uid: uid,
-      name: String(data['name'] ?? ''),
+      name: (data['name'] ?? '').toString(),
       seat: (data['seat'] as num?)?.toInt() ?? 0,
       alive: data['alive'] != false,
     );
@@ -56,9 +56,9 @@ class OnlineRoom {
         return sa.compareTo(sb);
       });
     return OnlineRoom(
-      roomId: String(data['roomId'] ?? room.id),
+      roomId: (data['roomId'] ?? room.id).toString(),
       size: (data['size'] as num?)?.toInt() ?? 8,
-      phase: String(data['phase'] ?? 'lobby'),
+      phase: (data['phase'] ?? 'lobby').toString(),
       round: (data['round'] as num?)?.toInt() ?? 0,
       hostUid: data['hostUid'] as String?,
       winner: data['winner'] as String?,
@@ -97,7 +97,7 @@ class MultiplayerService {
       'size': size,
       'name': name,
     });
-    return String(result.data['roomId']);
+    return result.data['roomId'].toString();
   }
 
   Future<void> joinRoom({required String roomId, required String name}) async {
