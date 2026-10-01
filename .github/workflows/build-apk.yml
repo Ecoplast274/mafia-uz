@@ -28,10 +28,15 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - run: flutter test
-      - run: flutter build apk --release
+      - name: Release APK
+        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
+      - name: Release AAB
+        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
       - name: Release yaratish
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v0.1.${{ github.run_number }}
           name: Mafiya APK #${{ github.run_number }}
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
