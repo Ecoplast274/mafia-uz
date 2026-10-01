@@ -1545,7 +1545,7 @@ class _GamePageState extends State<GamePage> {
                     const SizedBox(height: 14),
                     Expanded(
                       child: snapshot.hasError
-                          ? Center(child: Text('Lobby xatosi: \${snapshot.error}'))
+                          ? Center(child: Text('Lobby xatosi: ${snapshot.error}'))
                           : ListView.builder(
                               itemCount: docs.length,
                               itemBuilder: (_, i) {
@@ -1554,9 +1554,9 @@ class _GamePageState extends State<GamePage> {
                                   leading: CircleAvatar(
                                     backgroundColor:
                                         avatarColors[i % avatarColors.length],
-                                    child: Text('\${i + 1}'),
+                                    child: Text('${i + 1}'),
                                   ),
-                                  title: Text('\${p['name'] ?? 'Player'}'),
+                                  title: Text('${p['name'] ?? 'Player'}'),
                                   subtitle: Text(
                                     i == 0 ? 'Yetakchi' : 'O‘yinchi',
                                   ),
