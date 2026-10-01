@@ -8,6 +8,8 @@ import 'firebase_bootstrap.dart';
 import 'online_lobby.dart';
 import 'game.dart';
 import 'online_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
