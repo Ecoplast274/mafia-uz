@@ -228,8 +228,21 @@ exports.resolveNight = onCall(async request => {
   const roomId = cleanRoomId(request.data?.roomId);
   await requireMember(roomId, uid);
 
-  const { roomRef, room, players } = await getRoomAndPlayers(roomId);
-  if (room.phase !== "night") throw new HttpsError("failed-precondition", "Not a night phase.");
+  const roomRef = db.doc(`rooms/${roomId}`);
+  const room = await db.runTransaction(async tx => {
+    const snap = await tx.get(roomRef);
+    if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
+    const current = snap.data();
+    if (current.phase !== "night") {
+      throw new HttpsError("failed-precondition", "Not a night phase.");
+    }
+    tx.update(roomRef, {
+      phase: "resolving_night",
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    return current;
+  });
+  const players = (await roomRef.collection("players").get()).docs;
   const alivePlayers = players.filter(d => d.data().alive);
   const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
   const events = eventsSnap.docs.map(d => d.data());
@@ -293,8 +306,21 @@ exports.resolveVote = onCall(async request => {
   const uid = authUid(request);
   const roomId = cleanRoomId(request.data?.roomId);
   await requireMember(roomId, uid);
-  const { roomRef, room, players } = await getRoomAndPlayers(roomId);
-  if (room.phase !== "vote") throw new HttpsError("failed-precondition", "Not a vote phase.");
+  const roomRef = db.doc(`rooms/${roomId}`);
+  const room = await db.runTransaction(async tx => {
+    const snap = await tx.get(roomRef);
+    if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
+    const current = snap.data();
+    if (current.phase !== "vote") {
+      throw new HttpsError("failed-precondition", "Not a vote phase.");
+    }
+    tx.update(roomRef, {
+      phase: "resolving_vote",
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    return current;
+  });
+  const players = (await roomRef.collection("players").get()).docs;
 
   const alive = new Set(players.filter(d => d.data().alive).map(d => d.id));
   const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
