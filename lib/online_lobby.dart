@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import 'multiplayer_service.dart';
+import 'online_game.dart';
 
 class OnlineLobbyPage extends StatefulWidget {
   const OnlineLobbyPage({super.key});
@@ -196,12 +197,7 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
           final isHost = room.hostUid == service.currentUid;
 
           if (room.phase != 'lobby') {
-            return Center(
-              child: Text(
-                'O‘yin boshlandi: ' + room.phase,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-              ),
-            );
+            return OnlineGamePage(roomId: room.roomId);
           }
 
           return ListView(
