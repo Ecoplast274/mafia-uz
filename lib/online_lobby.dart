@@ -195,7 +195,7 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
           final room = snapshot.data!;
           final isHost = room.hostUid == service.currentUid;
 
-          if (!room.isLobby) {
+          if (room.phase != 'lobby') {
             return Center(
               child: Text(
                 'O‘yin boshlandi: ' + room.phase,
