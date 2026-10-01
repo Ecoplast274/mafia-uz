@@ -4,21 +4,13 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { initializeApp } = require("firebase-admin/app");
 
 initializeApp();
-setGlobalOptions({
-  region: "asia-southeast1",
-  maxInstances: 20,
-  concurrency: 80,
-});
+setGlobalOptions({ region: "asia-southeast1", maxInstances: 20, concurrency: 80 });
 
 const db = getFirestore();
 const ROOM_SIZES = new Set([8, 12]);
-const PHASES = new Set(["lobby", "night", "talk", "vote", "finished"]);
-const ROLES = ["mafia", "doctor", "sheriff", "citizen"];
 
 function authUid(request) {
-  if (!request.auth?.uid) {
-    throw new HttpsError("unauthenticated", "Authentication required.");
-  }
+  if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Authentication required.");
   return request.auth.uid;
 }
 
@@ -43,11 +35,7 @@ function mafiaCount(size) {
 }
 
 function shuffledRoles(size) {
-  const roles = [
-    ...Array(mafiaCount(size)).fill("mafia"),
-    "doctor",
-    "sheriff",
-  ];
+  const roles = [...Array(mafiaCount(size)).fill("mafia"), "doctor", "sheriff"];
   while (roles.length < size) roles.push("citizen");
   for (let i = roles.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -58,53 +46,50 @@ function shuffledRoles(size) {
 
 function randomRoomId() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
-  for (let i = 0; i < 6; i++) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return out;
+  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 }
 
 async function requireMember(roomId, uid) {
   const snap = await db.doc(`rooms/${roomId}/players/${uid}`).get();
-  if (!snap.exists) {
-    throw new HttpsError("permission-denied", "You are not a member of this room.");
-  }
+  if (!snap.exists) throw new HttpsError("permission-denied", "You are not a member of this room.");
   return snap.data();
 }
 
-exports.createRoom = onCall(async (request) => {
+async function getRoomAndPlayers(roomId) {
+  const roomRef = db.doc(`rooms/${roomId}`);
+  const roomSnap = await roomRef.get();
+  if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
+  const playersSnap = await roomRef.collection("players").get();
+  return { roomRef, room: roomSnap.data(), players: playersSnap.docs };
+}
+
+function winnerFor(players) {
+  const alive = players.filter(p => p.alive);
+  const mafia = alive.filter(p => p.role === "mafia").length;
+  const others = alive.length - mafia;
+  if (mafia === 0) return "citizen";
+  if (mafia >= others) return "mafia";
+  return null;
+}
+
+exports.createRoom = onCall(async request => {
   const uid = authUid(request);
   const size = Number(request.data?.size);
   const name = cleanName(request.data?.name);
-  if (!ROOM_SIZES.has(size)) {
-    throw new HttpsError("invalid-argument", "Room size must be 8 or 12.");
-  }
+  if (!ROOM_SIZES.has(size)) throw new HttpsError("invalid-argument", "Room size must be 8 or 12.");
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const roomId = randomRoomId();
     const roomRef = db.doc(`rooms/${roomId}`);
-    const playerRef = roomRef.collection("players").doc(uid);
     try {
-      await db.runTransaction(async (tx) => {
-        const existing = await tx.get(roomRef);
-        if (existing.exists) throw new Error("collision");
+      await db.runTransaction(async tx => {
+        if ((await tx.get(roomRef)).exists) throw new Error("collision");
         tx.create(roomRef, {
-          roomId,
-          size,
-          hostUid: uid,
-          phase: "lobby",
-          round: 0,
-          winner: null,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
+          roomId, size, hostUid: uid, phase: "lobby", round: 0, winner: null,
+          createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()
         });
-        tx.create(playerRef, {
-          uid,
-          name,
-          seat: 0,
-          alive: true,
-          joinedAt: FieldValue.serverTimestamp(),
+        tx.create(roomRef.collection("players").doc(uid), {
+          uid, name, seat: 0, alive: true, joinedAt: FieldValue.serverTimestamp()
         });
       });
       return { roomId, size, host: true };
@@ -115,36 +100,26 @@ exports.createRoom = onCall(async (request) => {
   throw new HttpsError("aborted", "Could not allocate a room.");
 });
 
-exports.joinRoom = onCall(async (request) => {
+exports.joinRoom = onCall(async request => {
   const uid = authUid(request);
   const roomId = cleanRoomId(request.data?.roomId);
   const name = cleanName(request.data?.name);
   const roomRef = db.doc(`rooms/${roomId}`);
   const playerRef = roomRef.collection("players").doc(uid);
 
-  await db.runTransaction(async (tx) => {
-    const room = await tx.get(roomRef);
-    if (!room.exists) throw new HttpsError("not-found", "Room not found.");
-    const data = room.data();
-    if (data.phase !== "lobby") {
-      throw new HttpsError("failed-precondition", "Game has already started.");
-    }
-
+  await db.runTransaction(async tx => {
+    const roomSnap = await tx.get(roomRef);
+    if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
+    const room = roomSnap.data();
+    if (room.phase !== "lobby") throw new HttpsError("failed-precondition", "Game has already started.");
     const players = await tx.get(roomRef.collection("players"));
-    const already = players.docs.some((d) => d.id === uid);
-    if (already) {
+    if (players.docs.some(d => d.id === uid)) {
       tx.update(playerRef, { name, updatedAt: FieldValue.serverTimestamp() });
       return;
     }
-    if (players.size >= data.size) {
-      throw new HttpsError("resource-exhausted", "Room is full.");
-    }
+    if (players.size >= room.size) throw new HttpsError("resource-exhausted", "Room is full.");
     tx.create(playerRef, {
-      uid,
-      name,
-      seat: players.size,
-      alive: true,
-      joinedAt: FieldValue.serverTimestamp(),
+      uid, name, seat: players.size, alive: true, joinedAt: FieldValue.serverTimestamp()
     });
     tx.update(roomRef, { updatedAt: FieldValue.serverTimestamp() });
   });
@@ -153,18 +128,16 @@ exports.joinRoom = onCall(async (request) => {
   return { roomId, size: room.size, host: room.hostUid === uid };
 });
 
-exports.leaveRoom = onCall(async (request) => {
+exports.leaveRoom = onCall(async request => {
   const uid = authUid(request);
   const roomId = cleanRoomId(request.data?.roomId);
   const roomRef = db.doc(`rooms/${roomId}`);
   const playerRef = roomRef.collection("players").doc(uid);
-
-  await db.runTransaction(async (tx) => {
+  await db.runTransaction(async tx => {
     const room = await tx.get(roomRef);
     const player = await tx.get(playerRef);
     if (!room.exists || !player.exists) return;
-    const data = room.data();
-    if (data.phase !== "lobby") {
+    if (room.data().phase !== "lobby") {
       throw new HttpsError("failed-precondition", "Cannot leave after game start.");
     }
     tx.delete(playerRef);
@@ -173,60 +146,42 @@ exports.leaveRoom = onCall(async (request) => {
   return { ok: true };
 });
 
-exports.startGame = onCall(async (request) => {
+exports.startGame = onCall(async request => {
   const uid = authUid(request);
   const roomId = cleanRoomId(request.data?.roomId);
   const roomRef = db.doc(`rooms/${roomId}`);
 
-  await db.runTransaction(async (tx) => {
+  await db.runTransaction(async tx => {
     const roomSnap = await tx.get(roomRef);
     if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
     const room = roomSnap.data();
     if (room.hostUid !== uid) throw new HttpsError("permission-denied", "Only the host can start.");
     if (room.phase !== "lobby") throw new HttpsError("failed-precondition", "Game already started.");
-
     const playersSnap = await tx.get(roomRef.collection("players"));
-    if (playersSnap.size !== room.size) {
-      throw new HttpsError("failed-precondition", "Room must be full before starting.");
-    }
+    if (playersSnap.size !== room.size) throw new HttpsError("failed-precondition", "Room must be full before starting.");
 
     const roles = shuffledRoles(room.size);
-    playersSnap.docs
-      .sort((a, b) => Number(a.data().seat) - Number(b.data().seat))
-      .forEach((doc, index) => {
-        const role = roles[index];
-        tx.set(roomRef.collection("private").doc(doc.id), {
-          uid: doc.id,
-          role,
-          round: 1,
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-        tx.update(doc.ref, {
-          alive: true,
-          rolePublic: role === "citizen" ? "citizen" : "special",
-        });
+    playersSnap.docs.sort((a, b) => Number(a.data().seat) - Number(b.data().seat)).forEach((doc, index) => {
+      tx.set(roomRef.collection("private").doc(doc.id), {
+        uid: doc.id, role: roles[index], round: 1, updatedAt: FieldValue.serverTimestamp()
       });
-
-    tx.update(roomRef, {
-      phase: "night",
-      round: 1,
-      updatedAt: FieldValue.serverTimestamp(),
+      tx.update(doc.ref, { alive: true, rolePublic: roles[index] === "citizen" ? "citizen" : "special" });
     });
+    tx.update(roomRef, { phase: "night", round: 1, winner: null, updatedAt: FieldValue.serverTimestamp() });
   });
-
   return { ok: true, phase: "night" };
 });
 
-exports.getMyRole = onCall(async (request) => {
+exports.getMyRole = onCall(async request => {
   const uid = authUid(request);
   const roomId = cleanRoomId(request.data?.roomId);
   await requireMember(roomId, uid);
   const snap = await db.doc(`rooms/${roomId}/private/${uid}`).get();
   if (!snap.exists) throw new HttpsError("failed-precondition", "Game has not started.");
-  return { role: snap.data().role, round: snap.data().round };
+  return { role: snap.data().role, round: snap.data().round, checkResult: snap.data().checkResult ?? null };
 });
 
-exports.submitAction = onCall(async (request) => {
+exports.submitAction = onCall(async request => {
   const uid = authUid(request);
   const roomId = cleanRoomId(request.data?.roomId);
   const type = String(request.data?.type ?? "");
@@ -237,15 +192,15 @@ exports.submitAction = onCall(async (request) => {
 
   const roomRef = db.doc(`rooms/${roomId}`);
   await requireMember(roomId, uid);
-
-  await db.runTransaction(async (tx) => {
+  await db.runTransaction(async tx => {
     const roomSnap = await tx.get(roomRef);
+    if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
     const room = roomSnap.data();
-    const actor = await tx.get(roomRef.collection("private").doc(uid));
-    const target = await tx.get(roomRef.collection("players").doc(targetUid));
-    if (!roomSnap.exists || !actor.exists || !target.exists) {
-      throw new HttpsError("not-found", "Game data not found.");
-    }
+    const actorRef = roomRef.collection("private").doc(uid);
+    const targetRef = roomRef.collection("players").doc(targetUid);
+    const actor = await tx.get(actorRef);
+    const target = await tx.get(targetRef);
+    if (!actor.exists || !target.exists) throw new HttpsError("not-found", "Game data not found.");
     if (!target.data().alive) throw new HttpsError("failed-precondition", "Target is dead.");
 
     const role = actor.data().role;
@@ -253,22 +208,119 @@ exports.submitAction = onCall(async (request) => {
       kill: room.phase === "night" && role === "mafia",
       save: room.phase === "night" && role === "doctor",
       check: room.phase === "night" && role === "sheriff",
-      vote: room.phase === "vote",
+      vote: room.phase === "vote"
     };
     if (!allowed[type]) throw new HttpsError("failed-precondition", "Action is not allowed now.");
     if (targetUid === uid && type !== "save") {
       throw new HttpsError("invalid-argument", "Self-targeting is not allowed.");
     }
 
-    const actionRef = roomRef.collection("events").doc();
-    tx.create(actionRef, {
-      type,
-      actorUid: uid,
-      targetUid,
-      round: room.round,
-      createdAt: FieldValue.serverTimestamp(),
-    });
+    const actionRef = roomRef.collection("events").doc(`${type}_${uid}_${room.round}`);
+    tx.set(actionRef, {
+      type, actorUid: uid, targetUid, round: room.round, createdAt: FieldValue.serverTimestamp()
+    }, { merge: true });
   });
-
   return { ok: true };
+});
+
+exports.resolveNight = onCall(async request => {
+  const uid = authUid(request);
+  const roomId = cleanRoomId(request.data?.roomId);
+  await requireMember(roomId, uid);
+
+  const { roomRef, room, players } = await getRoomAndPlayers(roomId);
+  if (room.phase !== "night") throw new HttpsError("failed-precondition", "Not a night phase.");
+  const alivePlayers = players.filter(d => d.data().alive);
+  const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
+  const events = eventsSnap.docs.map(d => d.data());
+
+  const privateDocs = await Promise.all(alivePlayers.map(d => roomRef.collection("private").doc(d.id).get()));
+  const roleByUid = new Map(privateDocs.filter(d => d.exists).map(d => [d.id, d.data().role]));
+  const aliveIds = new Set(alivePlayers.map(d => d.id));
+
+  const kills = events.filter(e => e.type === "kill" && roleByUid.get(e.actorUid) === "mafia" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
+  const saves = events.filter(e => e.type === "save" && roleByUid.get(e.actorUid) === "doctor" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
+  const checks = events.filter(e => e.type === "check" && roleByUid.get(e.actorUid) === "sheriff" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
+
+  const killCounts = new Map();
+  for (const e of kills) killCounts.set(e.targetUid, (killCounts.get(e.targetUid) || 0) + 1);
+  const maxKills = Math.max(0, ...killCounts.values());
+  const killLeaders = [...killCounts.entries()].filter(([, n]) => n === maxKills && n > 0);
+  const killTarget = killLeaders.length === 1 ? killLeaders[0][0] : null;
+  const saveTarget = saves.length ? saves[saves.length - 1].targetUid : null;
+
+  const updates = [];
+  let winner = null;
+  if (killTarget && killTarget !== saveTarget) {
+    updates.push({ ref: roomRef.collection("players").doc(killTarget), data: { alive: false } });
+  }
+
+  const playerStates = players.map(d => ({ uid: d.id, ...d.data(), role: roleByUid.get(d.id) }));
+  const nextStates = playerStates.map(p => p.uid === killTarget && killTarget !== saveTarget ? { ...p, alive: false } : p);
+  winner = winnerFor(nextStates);
+
+  const tx = db.batch();
+  for (const u of updates) tx.update(u.ref, u.data);
+  for (const e of checks) {
+    tx.set(roomRef.collection("private").doc(e.actorUid), {
+      checkResult: roleByUid.get(e.targetUid) === "mafia", round: room.round, updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
+  tx.update(roomRef, {
+    phase: winner ? "finished" : "talk",
+    winner,
+    updatedAt: FieldValue.serverTimestamp()
+  });
+  await tx.commit();
+  return { ok: true, phase: winner ? "finished" : "talk", winner, killed: killTarget && killTarget !== saveTarget ? killTarget : null };
+});
+
+exports.startVote = onCall(async request => {
+  const uid = authUid(request);
+  const roomId = cleanRoomId(request.data?.roomId);
+  await requireMember(roomId, uid);
+  const roomRef = db.doc(`rooms/${roomId}`);
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(roomRef);
+    if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
+    if (snap.data().phase !== "talk") throw new HttpsError("failed-precondition", "Not a talk phase.");
+    tx.update(roomRef, { phase: "vote", updatedAt: FieldValue.serverTimestamp() });
+  });
+  return { ok: true, phase: "vote" };
+});
+
+exports.resolveVote = onCall(async request => {
+  const uid = authUid(request);
+  const roomId = cleanRoomId(request.data?.roomId);
+  await requireMember(roomId, uid);
+  const { roomRef, room, players } = await getRoomAndPlayers(roomId);
+  if (room.phase !== "vote") throw new HttpsError("failed-precondition", "Not a vote phase.");
+
+  const alive = new Set(players.filter(d => d.data().alive).map(d => d.id));
+  const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
+  const counts = new Map();
+  for (const d of eventsSnap.docs) {
+    const e = d.data();
+    if (e.type === "vote" && alive.has(e.actorUid) && alive.has(e.targetUid) && e.actorUid !== e.targetUid) {
+      counts.set(e.targetUid, (counts.get(e.targetUid) || 0) + 1);
+    }
+  }
+  const maxVotes = Math.max(0, ...counts.values());
+  const leaders = [...counts.entries()].filter(([, n]) => n === maxVotes && n > 0);
+  const eliminated = leaders.length === 1 ? leaders[0][0] : null;
+
+  const after = players.map(d => ({
+    uid: d.id, ...d.data(), alive: d.id === eliminated ? false : d.data().alive
+  }));
+  const winner = winnerFor(after);
+  const batch = db.batch();
+  if (eliminated) batch.update(roomRef.collection("players").doc(eliminated), { alive: false });
+  batch.update(roomRef, {
+    phase: winner ? "finished" : "night",
+    winner,
+    round: winner ? room.round : room.round + 1,
+    updatedAt: FieldValue.serverTimestamp()
+  });
+  await batch.commit();
+  return { ok: true, phase: winner ? "finished" : "night", winner, eliminated };
 });
