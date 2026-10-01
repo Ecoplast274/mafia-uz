@@ -21,13 +21,17 @@ service cloud.firestore {
       }
 
       match /private/{uid} {
-        allow read: if signedIn() && request.auth.uid == uid && isMember(roomId);
+        allow read: if signedIn() &&
+          request.auth.uid == uid &&
+          isMember(roomId);
         allow write: if false;
       }
 
+      // Action/event documents contain private actor/target information.
+      // Clients submit actions through callable Cloud Functions and must
+      // never be allowed to read the raw event stream.
       match /events/{eventId} {
-        allow read: if isMember(roomId);
-        allow write: if false;
+        allow read, write: if false;
       }
     }
   }
