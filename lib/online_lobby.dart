@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
@@ -270,7 +271,7 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
               const SizedBox(height: 12),
               for (final player in players)
                 ListTile(
-                  leading: CircleAvatar(child: Text(((player.data()['seat'] as num?)?.toInt() ?? 0 + 1).toString())),
+                  leading: CircleAvatar(child: Text((((player.data()['seat'] as num?)?.toInt() ?? 0) + 1).toString())),
                   title: Text((player.data()['name'] ?? player.id).toString()),
                   trailing: player.id == hostUid
                       ? const Icon(Icons.star, color: Colors.amber)
@@ -279,9 +280,9 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
               const SizedBox(height: 12),
               if (isHost)
                 FilledButton.icon(
-                  onPressed: busy || room.players.length != room.size
+                  onPressed: busy || players.length != roomSize
                       ? null
-                      : () => startGame(room),
+                      : () => startGame(roomIdValue),
                   icon: const Icon(Icons.play_arrow),
                   label: Text(
                     players.length == roomSize
