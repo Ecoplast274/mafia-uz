@@ -118,8 +118,11 @@ exports.joinRoom = onCall(async request => {
       return;
     }
     if (players.size >= room.size) throw new HttpsError("resource-exhausted", "Room is full.");
+    const usedSeats = new Set(players.docs.map(d => Number(d.data().seat)).filter(Number.isFinite));
+    let seat = 0;
+    while (usedSeats.has(seat)) seat++;
     tx.create(playerRef, {
-      uid, name, seat: players.size, alive: true, joinedAt: FieldValue.serverTimestamp()
+      uid, name, seat, alive: true, joinedAt: FieldValue.serverTimestamp()
     });
     tx.update(roomRef, { updatedAt: FieldValue.serverTimestamp() });
   });
@@ -140,8 +143,23 @@ exports.leaveRoom = onCall(async request => {
     if (room.data().phase !== "lobby") {
       throw new HttpsError("failed-precondition", "Cannot leave after game start.");
     }
+    const current = room.data();
+    const players = await tx.get(roomRef.collection("players"));
+    const remaining = players.docs.filter(d => d.id !== uid);
     tx.delete(playerRef);
-    tx.update(roomRef, { updatedAt: FieldValue.serverTimestamp() });
+    if (current.hostUid === uid) {
+      if (remaining.length === 0) {
+        tx.delete(roomRef);
+        return;
+      }
+      remaining.sort((a, b) => Number(a.data().seat) - Number(b.data().seat));
+      tx.update(roomRef, {
+        hostUid: remaining[0].id,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+    } else {
+      tx.update(roomRef, { updatedAt: FieldValue.serverTimestamp() });
+    }
   });
   return { ok: true };
 });
@@ -330,6 +348,12 @@ exports.resolveVote = onCall(async request => {
     throw new HttpsError("failed-precondition", "Not a vote phase.");
   }
   const players = (await roomRef.collection("players").get()).docs;
+  const privateDocs = await Promise.all(
+    players.map(d => roomRef.collection("private").doc(d.id).get())
+  );
+  const roleByUid = new Map(
+    privateDocs.filter(d => d.exists).map(d => [d.id, d.data().role])
+  );
 
   const alive = new Set(players.filter(d => d.data().alive).map(d => d.id));
   const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
@@ -345,7 +369,10 @@ exports.resolveVote = onCall(async request => {
   const eliminated = leaders.length === 1 ? leaders[0][0] : null;
 
   const after = players.map(d => ({
-    uid: d.id, ...d.data(), alive: d.id === eliminated ? false : d.data().alive
+    uid: d.id,
+    ...d.data(),
+    role: roleByUid.get(d.id),
+    alive: d.id === eliminated ? false : d.data().alive
   }));
   const winner = winnerFor(after);
   await db.runTransaction(async tx => {
