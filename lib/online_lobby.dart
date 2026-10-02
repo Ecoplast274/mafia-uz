@@ -1,8 +1,8 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
-import 'multiplayer_service.dart';
 import 'online_game.dart';
+import 'online_service.dart';
 
 class OnlineLobbyPage extends StatefulWidget {
   const OnlineLobbyPage({super.key});
@@ -12,13 +12,30 @@ class OnlineLobbyPage extends StatefulWidget {
 }
 
 class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
-  final service = MultiplayerService.instance;
+  final service = MafiaOnlineService.instance;
   final name = TextEditingController();
   final code = TextEditingController();
   int size = 8;
   String? roomId;
-  Stream<OnlineRoom>? roomStream;
+  Stream<dynamic>? roomStream;
   bool busy = false;
+  bool initializing = true;
+  String? initError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    final ok = await service.initialize();
+    if (!mounted) return;
+    setState(() {
+      initializing = false;
+      initError = ok ? null : service.initError;
+    });
+  }
 
   @override
   void dispose() {
@@ -44,10 +61,11 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
     }
     setState(() => busy = true);
     try {
+      await service.initialize();
       final id = await service.createRoom(size: size, name: name.text);
       setState(() {
         roomId = id;
-        roomStream = service.watchRoom(id);
+        roomStream = service.roomStream(id);
       });
     } catch (e) {
       showError(e);
@@ -64,10 +82,11 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
     }
     setState(() => busy = true);
     try {
+      await service.initialize();
       await service.joinRoom(roomId: id, name: name.text);
       setState(() {
         roomId = id;
-        roomStream = service.watchRoom(id);
+        roomStream = service.roomStream(id);
       });
     } catch (e) {
       showError(e);
@@ -76,10 +95,10 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
     }
   }
 
-  Future<void> startGame(OnlineRoom room) async {
+  Future<void> startGame(String id) async {
     setState(() => busy = true);
     try {
-      await service.startGame(room.roomId);
+      await service.startGame(id);
     } catch (e) {
       showError(e);
     } finally {
@@ -105,17 +124,21 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!service.configured && roomId == null) {
+    if (initializing) {
+      return const Scaffold(
+        appBar: AppBar(title: Text('Online multiplayer')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (initError != null && roomId == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Online multiplayer')),
-        body: const Center(
+        body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Text(
-              'Firebase client konfiguratsiyasi hali tayyor emas.\n\n'
-              'Backend tayyor. Android va Web Firebase app ro‘yxatdan '
-              'o‘tkazilib, client FirebaseOptions berilgach bu ekran real '
-              'xonalarga ulanadi.',
+              'Firebase ulanishi tayyor emas.\\n\\n$initError',
               textAlign: TextAlign.center,
             ),
           ),
@@ -183,7 +206,7 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
         ],
       );
 
-  Widget lobby() => StreamBuilder<OnlineRoom>(
+  Widget lobby() => StreamBuilder<dynamic>(
         stream: roomStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -193,12 +216,31 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final room = snapshot.data!;
-          final isHost = room.hostUid == service.currentUid;
-
-          if (room.phase != 'lobby') {
-            return OnlineGamePage(roomId: room.roomId);
+          final snap = snapshot.data as dynamic;
+          if (!snap.exists) {
+            return const Center(child: Text('Xona topilmadi.'));
           }
+          final data = snap.data() as Map<String, dynamic>;
+          final roomIdValue = (data['roomId'] ?? roomId ?? '').toString();
+          final phase = (data['phase'] ?? 'lobby').toString();
+          final roomSize = (data['size'] as num?)?.toInt() ?? size;
+          final hostUid = data['hostUid']?.toString();
+          final isHost = hostUid == service.user?.uid;
+
+          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: service.playersStream(roomIdValue),
+            builder: (context, playersSnapshot) {
+              if (playersSnapshot.hasError) {
+                return Center(child: Text('O‘yinchilar xatosi: ${playersSnapshot.error}'));
+              }
+              if (!playersSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final players = playersSnapshot.data!.docs;
+
+              if (phase != 'lobby') {
+                return OnlineGamePage(roomId: roomIdValue);
+              }
 
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -212,25 +254,25 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
                           style: TextStyle(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 4),
                       SelectableText(
-                        room.roomId,
+                        roomIdValue,
                         style: const TextStyle(
                           fontSize: 34,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 7,
                         ),
                       ),
-                      Text(room.players.length.toString() + '/' +
-                          room.size.toString() + ' o‘yinchi'),
+                      Text(players.length.toString() + '/' +
+                          roomSize.toString() + ' o‘yinchi'),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              for (final player in room.players)
+              for (final player in players)
                 ListTile(
-                  leading: CircleAvatar(child: Text((player.seat + 1).toString())),
-                  title: Text(player.name),
-                  trailing: player.uid == room.hostUid
+                  leading: CircleAvatar(child: Text(((player.data()['seat'] as num?)?.toInt() ?? 0 + 1).toString())),
+                  title: Text((player.data()['name'] ?? player.id).toString()),
+                  trailing: player.id == hostUid
                       ? const Icon(Icons.star, color: Colors.amber)
                       : null,
                 ),
@@ -242,7 +284,7 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
                       : () => startGame(room),
                   icon: const Icon(Icons.play_arrow),
                   label: Text(
-                    room.players.length == room.size
+                    players.length == roomSize
                         ? 'O‘yinni boshlash'
                         : 'Avval xona to‘lsin',
                   ),
@@ -252,6 +294,8 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
                   child: Text('Yetakchi xona to‘lishini kutmoqda.'),
                 ),
             ],
+          );
+            },
           );
         },
       );
