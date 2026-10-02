@@ -126,8 +126,8 @@ class _OnlineLobbyPageState extends State<OnlineLobbyPage> {
   @override
   Widget build(BuildContext context) {
     if (initializing) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Online multiplayer')),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Online multiplayer')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
