@@ -236,22 +236,15 @@ exports.resolveNight = onCall(async request => {
   await requireMember(roomId, uid);
 
   const roomRef = db.doc(`rooms/${roomId}`);
-  const room = await db.runTransaction(async tx => {
-    const snap = await tx.get(roomRef);
-    if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
-    const current = snap.data();
-    if (current.hostUid !== uid) {
-      throw new HttpsError("permission-denied", "Only the host can resolve the night.");
-    }
-    if (current.phase !== "night") {
-      throw new HttpsError("failed-precondition", "Not a night phase.");
-    }
-    tx.update(roomRef, {
-      phase: "resolving_night",
-      updatedAt: FieldValue.serverTimestamp()
-    });
-    return current;
-  });
+  const roomSnap = await roomRef.get();
+  if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
+  const room = roomSnap.data();
+  if (room.hostUid !== uid) {
+    throw new HttpsError("permission-denied", "Only the host can resolve the night.");
+  }
+  if (room.phase !== "night") {
+    throw new HttpsError("failed-precondition", "Not a night phase.");
+  }
   const players = (await roomRef.collection("players").get()).docs;
   const alivePlayers = players.filter(d => d.data().alive);
   const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
@@ -282,19 +275,25 @@ exports.resolveNight = onCall(async request => {
   const nextStates = playerStates.map(p => p.uid === killTarget && killTarget !== saveTarget ? { ...p, alive: false } : p);
   winner = winnerFor(nextStates);
 
-  const tx = db.batch();
-  for (const u of updates) tx.update(u.ref, u.data);
-  for (const e of checks) {
-    tx.set(roomRef.collection("private").doc(e.actorUid), {
-      checkResult: roleByUid.get(e.targetUid) === "mafia", round: room.round, updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
-  }
-  tx.update(roomRef, {
-    phase: winner ? "finished" : "talk",
-    winner,
-    updatedAt: FieldValue.serverTimestamp()
+  await db.runTransaction(async tx => {
+    const currentSnap = await tx.get(roomRef);
+    if (!currentSnap.exists) throw new HttpsError("not-found", "Room not found.");
+    const current = currentSnap.data();
+    if (current.hostUid !== uid || current.phase !== "night" || current.round !== room.round) {
+      throw new HttpsError("aborted", "Night was already resolved or changed.");
+    }
+    for (const u of updates) tx.update(u.ref, u.data);
+    for (const e of checks) {
+      tx.set(roomRef.collection("private").doc(e.actorUid), {
+        checkResult: roleByUid.get(e.targetUid) === "mafia", round: room.round, updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+    tx.update(roomRef, {
+      phase: winner ? "finished" : "talk",
+      winner,
+      updatedAt: FieldValue.serverTimestamp()
+    });
   });
-  await tx.commit();
   return { ok: true, phase: winner ? "finished" : "talk", winner, killed: killTarget && killTarget !== saveTarget ? killTarget : null };
 });
 
@@ -321,22 +320,15 @@ exports.resolveVote = onCall(async request => {
   const roomId = cleanRoomId(request.data?.roomId);
   await requireMember(roomId, uid);
   const roomRef = db.doc(`rooms/${roomId}`);
-  const room = await db.runTransaction(async tx => {
-    const snap = await tx.get(roomRef);
-    if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
-    const current = snap.data();
-    if (current.hostUid !== uid) {
-      throw new HttpsError("permission-denied", "Only the host can resolve the vote.");
-    }
-    if (current.phase !== "vote") {
-      throw new HttpsError("failed-precondition", "Not a vote phase.");
-    }
-    tx.update(roomRef, {
-      phase: "resolving_vote",
-      updatedAt: FieldValue.serverTimestamp()
-    });
-    return current;
-  });
+  const roomSnap = await roomRef.get();
+  if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
+  const room = roomSnap.data();
+  if (room.hostUid !== uid) {
+    throw new HttpsError("permission-denied", "Only the host can resolve the vote.");
+  }
+  if (room.phase !== "vote") {
+    throw new HttpsError("failed-precondition", "Not a vote phase.");
+  }
   const players = (await roomRef.collection("players").get()).docs;
 
   const alive = new Set(players.filter(d => d.data().alive).map(d => d.id));
@@ -356,14 +348,22 @@ exports.resolveVote = onCall(async request => {
     uid: d.id, ...d.data(), alive: d.id === eliminated ? false : d.data().alive
   }));
   const winner = winnerFor(after);
-  const batch = db.batch();
-  if (eliminated) batch.update(roomRef.collection("players").doc(eliminated), { alive: false });
-  batch.update(roomRef, {
-    phase: winner ? "finished" : "night",
-    winner,
-    round: winner ? room.round : room.round + 1,
-    updatedAt: FieldValue.serverTimestamp()
+  await db.runTransaction(async tx => {
+    const currentSnap = await tx.get(roomRef);
+    if (!currentSnap.exists) throw new HttpsError("not-found", "Room not found.");
+    const current = currentSnap.data();
+    if (current.hostUid !== uid || current.phase !== "vote" || current.round !== room.round) {
+      throw new HttpsError("aborted", "Vote was already resolved or changed.");
+    }
+    if (eliminated) {
+      tx.update(roomRef.collection("players").doc(eliminated), { alive: false });
+    }
+    tx.update(roomRef, {
+      phase: winner ? "finished" : "night",
+      winner,
+      round: winner ? room.round : room.round + 1,
+      updatedAt: FieldValue.serverTimestamp()
+    });
   });
-  await batch.commit();
   return { ok: true, phase: winner ? "finished" : "night", winner, eliminated };
 });
