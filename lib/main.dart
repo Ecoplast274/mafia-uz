@@ -305,6 +305,14 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> {
+  @override
+  void initState() {
+    super.initState();
+    online.initialize().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   Stage stage = Stage.setup;
   Stage after = Stage.talk;
   int room = 8;
