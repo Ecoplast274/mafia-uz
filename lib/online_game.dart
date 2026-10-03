@@ -60,6 +60,8 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
     roundSeen = round;
     timer?.cancel();
     seconds = 30;
+    target = null;
+    sent = false;
     if (phase != 'night' && phase != 'talk' && phase != 'vote') return;
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) return;
