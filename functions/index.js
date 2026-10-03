@@ -385,6 +385,15 @@ exports.resolveVote = onCall(async request => {
     if (eliminated) {
       tx.update(roomRef.collection("players").doc(eliminated), { alive: false });
     }
+    if (!winner) {
+      for (const player of players) {
+        tx.set(roomRef.collection("private").doc(player.id), {
+          round: room.round + 1,
+          checkResult: FieldValue.delete(),
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
+    }
     tx.update(roomRef, {
       phase: winner ? "finished" : "night",
       winner,
