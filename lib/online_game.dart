@@ -22,6 +22,9 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   String? target;
   bool busy = false;
   bool sent = false;
+  bool roleLoading = false;
+  String? scheduledPhase;
+  int? scheduledRound;
   String? phaseSeen;
   int? roundSeen;
 
@@ -39,7 +42,8 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   }
 
   Future<void> loadRole(int round) async {
-    if (roleRound == round) return;
+    if (roleRound == round || roleLoading) return;
+    roleLoading = true;
     try {
       final data = await service.getMyRole(widget.roomId);
       if (!mounted) return;
@@ -51,7 +55,23 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
         target = null;
         sent = false;
       });
-    } catch (_) {}
+    } catch (_) {} finally {
+      roleLoading = false;
+    }
+  }
+
+  void schedulePhaseSync(String phase, int round, bool host) {
+    if (phaseSeen == phase && roundSeen == round) return;
+    if (scheduledPhase == phase && scheduledRound == round) return;
+    scheduledPhase = phase;
+    scheduledRound = round;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || scheduledPhase != phase || scheduledRound != round) return;
+      scheduledPhase = null;
+      scheduledRound = null;
+      syncTimer(phase, round, host);
+      if (phase == 'night' && round > 0) loadRole(round);
+    });
   }
 
   void syncTimer(String phase, int round, bool host) {
@@ -207,8 +227,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
           final phase = data['phase']?.toString() ?? 'lobby';
           final round = (data['round'] as num?)?.toInt() ?? 0;
           final host = data['hostUid'] == service.user?.uid;
-          syncTimer(phase, round, host);
-          if (phase == 'night' && round > 0) loadRole(round);
+          schedulePhaseSync(phase, round, host);
 
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: playersStream,
