@@ -28,7 +28,7 @@ jobs:
       - name: Firebase client configuration
         run: |
           test -f lib/firebase_options.dart
-          echo "Using checked-in Firebase client configuration."
+          echo "Using checked-in Firebase client configuration (no service account required)."
       - run: flutter pub get
       - run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - run: flutter test
