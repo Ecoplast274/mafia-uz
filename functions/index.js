@@ -249,70 +249,39 @@ exports.submitAction = onCall(async request => {
 });
 
 exports.resolveNight = onCall(async request => {
-  const uid = authUid(request);
-  const roomId = cleanRoomId(request.data?.roomId);
+  const uid = authUid(request), roomId = cleanRoomId(request.data?.roomId);
   await requireMember(roomId, uid);
-
   const roomRef = db.doc(`rooms/${roomId}`);
-  const roomSnap = await roomRef.get();
-  if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
-  const room = roomSnap.data();
-  if (room.hostUid !== uid) {
-    throw new HttpsError("permission-denied", "Only the host can resolve the night.");
-  }
-  if (room.phase !== "night") {
-    throw new HttpsError("failed-precondition", "Not a night phase.");
-  }
-  const players = (await roomRef.collection("players").get()).docs;
-  const alivePlayers = players.filter(d => d.data().alive);
-  const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
-  const events = eventsSnap.docs.map(d => d.data());
-
-  const privateDocs = await Promise.all(alivePlayers.map(d => roomRef.collection("private").doc(d.id).get()));
-  const roleByUid = new Map(privateDocs.filter(d => d.exists).map(d => [d.id, d.data().role]));
-  const aliveIds = new Set(alivePlayers.map(d => d.id));
-
-  const kills = events.filter(e => e.type === "kill" && roleByUid.get(e.actorUid) === "mafia" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
-  const saves = events.filter(e => e.type === "save" && roleByUid.get(e.actorUid) === "doctor" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
-  const checks = events.filter(e => e.type === "check" && roleByUid.get(e.actorUid) === "sheriff" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
-
-  const killCounts = new Map();
-  for (const e of kills) killCounts.set(e.targetUid, (killCounts.get(e.targetUid) || 0) + 1);
-  const maxKills = Math.max(0, ...killCounts.values());
-  const killLeaders = [...killCounts.entries()].filter(([, n]) => n === maxKills && n > 0);
-  const killTarget = killLeaders.length === 1 ? killLeaders[0][0] : null;
-  const saveTarget = saves.length ? saves[saves.length - 1].targetUid : null;
-
-  const updates = [];
-  let winner = null;
-  if (killTarget && killTarget !== saveTarget) {
-    updates.push({ ref: roomRef.collection("players").doc(killTarget), data: { alive: false } });
-  }
-
-  const playerStates = players.map(d => ({ uid: d.id, ...d.data(), role: roleByUid.get(d.id) }));
-  const nextStates = playerStates.map(p => p.uid === killTarget && killTarget !== saveTarget ? { ...p, alive: false } : p);
-  winner = winnerFor(nextStates);
-
-  await db.runTransaction(async tx => {
-    const currentSnap = await tx.get(roomRef);
-    if (!currentSnap.exists) throw new HttpsError("not-found", "Room not found.");
-    const current = currentSnap.data();
-    if (current.hostUid !== uid || current.phase !== "night" || current.round !== room.round) {
-      throw new HttpsError("aborted", "Night was already resolved or changed.");
-    }
-    for (const u of updates) tx.update(u.ref, u.data);
-    for (const e of checks) {
-      tx.set(roomRef.collection("private").doc(e.actorUid), {
-        checkResult: roleByUid.get(e.targetUid) === "mafia", round: room.round, updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-    }
-    tx.update(roomRef, {
-      phase: winner ? "finished" : "talk",
-      winner,
-      updatedAt: FieldValue.serverTimestamp()
-    });
+  return db.runTransaction(async tx => {
+    const roomSnap = await tx.get(roomRef);
+    if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
+    const room = roomSnap.data();
+    if (room.hostUid !== uid) throw new HttpsError("permission-denied", "Only the host can resolve the night.");
+    if (room.phase !== "night") throw new HttpsError("failed-precondition", "Not a night phase.");
+    const players = (await tx.get(roomRef.collection("players"))).docs;
+    const alivePlayers = players.filter(d => d.data().alive);
+    const events = (await tx.get(roomRef.collection("events").where("round", "==", room.round))).docs.map(d => d.data());
+    const privateRefs = alivePlayers.map(d => roomRef.collection("private").doc(d.id));
+    const privateDocs = privateRefs.length ? await tx.getAll(...privateRefs) : [];
+    const roles = new Map(privateDocs.filter(d => d.exists).map(d => [d.id, d.data().role]));
+    const aliveIds = new Set(alivePlayers.map(d => d.id));
+    const kills = events.filter(e => e.type === "kill" && roles.get(e.actorUid) === "mafia" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
+    const saves = events.filter(e => e.type === "save" && roles.get(e.actorUid) === "doctor" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
+    const checks = events.filter(e => e.type === "check" && roles.get(e.actorUid) === "sheriff" && aliveIds.has(e.actorUid) && aliveIds.has(e.targetUid));
+    const killCounts = new Map();
+    for (const e of kills) killCounts.set(e.targetUid, (killCounts.get(e.targetUid) || 0) + 1);
+    const maxKills = Math.max(0, ...killCounts.values());
+    const leaders = [...killCounts.entries()].filter(([, n]) => n === maxKills && n > 0);
+    const killTarget = leaders.length === 1 ? leaders[0][0] : null;
+    const saveTarget = saves.length ? saves[saves.length - 1].targetUid : null;
+    const eliminated = Boolean(killTarget && killTarget !== saveTarget);
+    const after = players.map(d => ({uid:d.id,...d.data(),role:roles.get(d.id),alive:d.id===killTarget&&eliminated?false:d.data().alive}));
+    const winner = winnerFor(after);
+    if (eliminated) tx.update(roomRef.collection("players").doc(killTarget), {alive:false});
+    for (const e of checks) tx.set(roomRef.collection("private").doc(e.actorUid), {checkResult:roles.get(e.targetUid)==="mafia",round:room.round,updatedAt:FieldValue.serverTimestamp()},{merge:true});
+    tx.update(roomRef,{phase:winner?"finished":"talk",winner,updatedAt:FieldValue.serverTimestamp()});
+    return {ok:true,phase:winner?"finished":"talk",winner,killed:eliminated?killTarget:null};
   });
-  return { ok: true, phase: winner ? "finished" : "talk", winner, killed: killTarget && killTarget !== saveTarget ? killTarget : null };
 });
 
 exports.startVote = onCall(async request => {
@@ -334,72 +303,31 @@ exports.startVote = onCall(async request => {
 });
 
 exports.resolveVote = onCall(async request => {
-  const uid = authUid(request);
-  const roomId = cleanRoomId(request.data?.roomId);
+  const uid = authUid(request), roomId = cleanRoomId(request.data?.roomId);
   await requireMember(roomId, uid);
   const roomRef = db.doc(`rooms/${roomId}`);
-  const roomSnap = await roomRef.get();
-  if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
-  const room = roomSnap.data();
-  if (room.hostUid !== uid) {
-    throw new HttpsError("permission-denied", "Only the host can resolve the vote.");
-  }
-  if (room.phase !== "vote") {
-    throw new HttpsError("failed-precondition", "Not a vote phase.");
-  }
-  const players = (await roomRef.collection("players").get()).docs;
-  const privateDocs = await Promise.all(
-    players.map(d => roomRef.collection("private").doc(d.id).get())
-  );
-  const roleByUid = new Map(
-    privateDocs.filter(d => d.exists).map(d => [d.id, d.data().role])
-  );
-
-  const alive = new Set(players.filter(d => d.data().alive).map(d => d.id));
-  const eventsSnap = await roomRef.collection("events").where("round", "==", room.round).get();
-  const counts = new Map();
-  for (const d of eventsSnap.docs) {
-    const e = d.data();
-    if (e.type === "vote" && alive.has(e.actorUid) && alive.has(e.targetUid) && e.actorUid !== e.targetUid) {
-      counts.set(e.targetUid, (counts.get(e.targetUid) || 0) + 1);
-    }
-  }
-  const maxVotes = Math.max(0, ...counts.values());
-  const leaders = [...counts.entries()].filter(([, n]) => n === maxVotes && n > 0);
-  const eliminated = leaders.length === 1 ? leaders[0][0] : null;
-
-  const after = players.map(d => ({
-    uid: d.id,
-    ...d.data(),
-    role: roleByUid.get(d.id),
-    alive: d.id === eliminated ? false : d.data().alive
-  }));
-  const winner = winnerFor(after);
-  await db.runTransaction(async tx => {
-    const currentSnap = await tx.get(roomRef);
-    if (!currentSnap.exists) throw new HttpsError("not-found", "Room not found.");
-    const current = currentSnap.data();
-    if (current.hostUid !== uid || current.phase !== "vote" || current.round !== room.round) {
-      throw new HttpsError("aborted", "Vote was already resolved or changed.");
-    }
-    if (eliminated) {
-      tx.update(roomRef.collection("players").doc(eliminated), { alive: false });
-    }
-    if (!winner) {
-      for (const player of players) {
-        tx.set(roomRef.collection("private").doc(player.id), {
-          round: room.round + 1,
-          checkResult: FieldValue.delete(),
-          updatedAt: FieldValue.serverTimestamp()
-        }, { merge: true });
-      }
-    }
-    tx.update(roomRef, {
-      phase: winner ? "finished" : "night",
-      winner,
-      round: winner ? room.round : room.round + 1,
-      updatedAt: FieldValue.serverTimestamp()
-    });
+  return db.runTransaction(async tx => {
+    const roomSnap = await tx.get(roomRef);
+    if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
+    const room = roomSnap.data();
+    if (room.hostUid !== uid) throw new HttpsError("permission-denied", "Only the host can resolve the vote.");
+    if (room.phase !== "vote") throw new HttpsError("failed-precondition", "Not a vote phase.");
+    const players = (await tx.get(roomRef.collection("players"))).docs;
+    const privateRefs = players.map(d => roomRef.collection("private").doc(d.id));
+    const privateDocs = privateRefs.length ? await tx.getAll(...privateRefs) : [];
+    const roles = new Map(privateDocs.filter(d => d.exists).map(d => [d.id, d.data().role]));
+    const alive = new Set(players.filter(d => d.data().alive).map(d => d.id));
+    const events = (await tx.get(roomRef.collection("events").where("round","==",room.round))).docs;
+    const counts = new Map();
+    for (const d of events) { const e=d.data(); if(e.type==="vote"&&alive.has(e.actorUid)&&alive.has(e.targetUid)&&e.actorUid!==e.targetUid) counts.set(e.targetUid,(counts.get(e.targetUid)||0)+1); }
+    const maxVotes=Math.max(0,...counts.values());
+    const leaders=[...counts.entries()].filter(([,n])=>n===maxVotes&&n>0);
+    const eliminated=leaders.length===1?leaders[0][0]:null;
+    const after=players.map(d=>({uid:d.id,...d.data(),role:roles.get(d.id),alive:d.id===eliminated?false:d.data().alive}));
+    const winner=winnerFor(after);
+    if(eliminated) tx.update(roomRef.collection("players").doc(eliminated),{alive:false});
+    if(!winner) for(const p of players) tx.set(roomRef.collection("private").doc(p.id),{round:room.round+1,checkResult:FieldValue.delete(),updatedAt:FieldValue.serverTimestamp()},{merge:true});
+    tx.update(roomRef,{phase:winner?"finished":"night",winner,round:winner?room.round:room.round+1,updatedAt:FieldValue.serverTimestamp()});
+    return {ok:true,phase:winner?"finished":"night",winner,eliminated};
   });
-  return { ok: true, phase: winner ? "finished" : "night", winner, eliminated };
 });
