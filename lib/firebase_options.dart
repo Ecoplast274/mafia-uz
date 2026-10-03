@@ -21,11 +21,13 @@ class DefaultFirebaseOptions {
     storageBucket: String.fromEnvironment('FIREBASE_STORAGE_BUCKET'),
   );
 
+  // Android Firebase client registered in project mafia-uz-82794.
+  // Values are from the Firebase-generated google-services.json.
   static const android = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY'),
-    appId: String.fromEnvironment('FIREBASE_APP_ID'),
-    messagingSenderId: String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID'),
-    projectId: String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: 'mafia-uz-82794'),
-    storageBucket: String.fromEnvironment('FIREBASE_STORAGE_BUCKET'),
+    apiKey: 'AIzaSyBpZ5NUYKkRkZV2xx-gWY4ocN46rBJSyKI',
+    appId: '1:692056725984:android:8f9f38f30cd5b0ca7db385',
+    messagingSenderId: '692056725984',
+    projectId: 'mafia-uz-82794',
+    storageBucket: 'mafia-uz-82794.firebasestorage.app',
   );
 }
