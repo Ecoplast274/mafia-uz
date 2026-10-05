@@ -69,12 +69,12 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
       if (!mounted || scheduledPhase != phase || scheduledRound != round) return;
       scheduledPhase = null;
       scheduledRound = null;
-      syncTimer(phase, phaseEndsAt);
+      syncTimer(phase, round, phaseEndsAt);
       if (phase == 'night' && round > 0) loadRole(round);
     });
   }
 
-  void syncTimer(String phase, int phaseEndsAt) {
+  void syncTimer(String phase, int round, int phaseEndsAt) {
     if (phaseSeen == phase && roundSeen == round) return;
     phaseSeen = phase;
     roundSeen = round;
