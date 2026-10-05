@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'firebase_bootstrap.dart';
 import 'online_lobby.dart';
+import 'online_game.dart';
 import 'game.dart';
 import 'online_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -1504,6 +1505,9 @@ class _GamePageState extends State<GamePage> {
   void _showOnlineLobby() {
     final roomId = onlineRoomId;
     if (roomId == null) return;
+
+    var transitioning = false;
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1514,101 +1518,146 @@ class _GamePageState extends State<GamePage> {
       builder: (sheetContext) => SafeArea(
         child: SizedBox(
           height: MediaQuery.of(sheetContext).size.height * .72,
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: online.playersStream(roomId),
-            builder: (context, snapshot) {
-              final docs = snapshot.data?.docs ?? const [];
-              return Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: online.roomStream(roomId),
+            builder: (context, roomSnapshot) {
+              if (roomSnapshot.hasError) {
+                return Center(child: Text('Lobby xatosi: ${roomSnapshot.error}'));
+              }
+              if (!roomSnapshot.hasData || !roomSnapshot.data!.exists) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final roomData = roomSnapshot.data!.data()!;
+              final phase = roomData['phase']?.toString() ?? 'lobby';
+              if (phase != 'lobby') {
+                if (!transitioning) {
+                  transitioning = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    Navigator.pop(sheetContext);
+                    Navigator.of(this.context).push(
+                      MaterialPageRoute(
+                        builder: (_) => OnlineGamePage(roomId: roomId),
+                      ),
+                    );
+                  });
+                }
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final roomSize = (roomData['size'] as num?)?.toInt() ?? room;
+              final hostUid = roomData['hostUid']?.toString();
+              final isHost = hostUid == online.user?.uid;
+              final displayHost = isHost || onlineHost;
+
+              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: online.playersStream(roomId),
+                builder: (context, snapshot) {
+                  final docs = snapshot.data?.docs ?? const [];
+
+                  return Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.cloud_done, color: _cyan),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Online lobby',
-                            style: TextStyle(
-                              fontSize: 21,
-                              fontWeight: FontWeight.w900,
+                        Row(
+                          children: [
+                            const Icon(Icons.cloud_done, color: _cyan),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Online lobby',
+                                style: TextStyle(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
                             ),
+                            IconButton(
+                              onPressed: () => Clipboard.setData(
+                                ClipboardData(text: roomId),
+                              ),
+                              icon: const Icon(Icons.copy),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'Xona kodi: $roomId',
+                          style: const TextStyle(
+                            color: _cyan,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        IconButton(
-                          onPressed: () => Clipboard.setData(
-                            ClipboardData(text: roomId),
+                        Text(
+                          '${docs.length}/$roomSize o‘yinchi',
+                          style: const TextStyle(color: Colors.white60),
+                        ),
+                        const SizedBox(height: 14),
+                        Expanded(
+                          child: snapshot.hasError
+                              ? Center(child: Text('O‘yinchilar xatosi: ${snapshot.error}'))
+                              : ListView.builder(
+                                  itemCount: docs.length,
+                                  itemBuilder: (_, i) {
+                                    final p = docs[i].data();
+                                    return ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor:
+                                            avatarColors[i % avatarColors.length],
+                                        child: Text('${i + 1}'),
+                                      ),
+                                      title: Text('${p['name'] ?? 'Player'}'),
+                                      subtitle: Text(
+                                        docs[i].id == hostUid
+                                            ? 'Yetakchi'
+                                            : 'O‘yinchi',
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        if (displayHost)
+                          FilledButton.icon(
+                            onPressed: docs.length == roomSize
+                                ? () async {
+                                    try {
+                                      await online.startGame(roomId);
+                                    } on FirebaseFunctionsException catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(this.context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(e.message ?? e.code),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+                                : null,
+                            icon: const Icon(Icons.play_arrow),
+                            label: Text(
+                              docs.length == roomSize
+                                  ? 'O‘yinni boshlash'
+                                  : 'Xona to‘lishini kuting',
+                            ),
                           ),
-                          icon: const Icon(Icons.copy),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            try {
+                              await online.leaveRoom(roomId);
+                            } catch (_) {}
+                            if (mounted) Navigator.pop(sheetContext);
+                          },
+                          icon: const Icon(Icons.exit_to_app),
+                          label: const Text('Xonadan chiqish'),
                         ),
                       ],
                     ),
-                    Text(
-                      'Xona kodi: $roomId',
-                      style: const TextStyle(
-                        color: _cyan,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Expanded(
-                      child: snapshot.hasError
-                          ? Center(child: Text('Lobby xatosi: ${snapshot.error}'))
-                          : ListView.builder(
-                              itemCount: docs.length,
-                              itemBuilder: (_, i) {
-                                final p = docs[i].data();
-                                return ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor:
-                                        avatarColors[i % avatarColors.length],
-                                    child: Text('${i + 1}'),
-                                  ),
-                                  title: Text('${p['name'] ?? 'Player'}'),
-                                  subtitle: Text(
-                                    i == 0 ? 'Yetakchi' : 'O‘yinchi',
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    if (onlineHost)
-                      FilledButton.icon(
-                        onPressed: docs.length < 8
-                            ? null
-                            : () async {
-                                try {
-                                  await online.startGame(roomId);
-                                  if (mounted) Navigator.pop(sheetContext);
-                                } on FirebaseFunctionsException catch (e) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(this.context)
-                                        .showSnackBar(
-                                      SnackBar(
-                                        content: Text(e.message ?? e.code),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text('O‘yinni boshlash'),
-                      ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        try {
-                          await online.leaveRoom(roomId);
-                        } catch (_) {}
-                        if (mounted) Navigator.pop(sheetContext);
-                      },
-                      icon: const Icon(Icons.exit_to_app),
-                      label: const Text('Xonadan chiqish'),
-                    ),
-                  ],
-                ),
+                  );
+                },
               );
             },
           ),
