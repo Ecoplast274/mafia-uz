@@ -232,7 +232,6 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
           final phase = data['phase']?.toString() ?? 'lobby';
           final round = (data['round'] as num?)?.toInt() ?? 0;
           final phaseEndsAt = (data['phaseEndsAt'] as num?)?.toInt() ?? 0;
-          final host = data['hostUid'] == service.user?.uid;
           schedulePhaseSync(phase, round, phaseEndsAt);
 
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
