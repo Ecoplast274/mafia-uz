@@ -1,8 +1,15 @@
-name: Build Web
+name: Build and Deploy Web
 
 on:
   push:
     branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "web/**"
+      - ".github/workflows/build-web.yml"
   workflow_dispatch:
 
 permissions:
@@ -19,33 +26,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: "3.47.6"
           cache: true
-      - run: |
-          flutter create --platforms=web --project-name mafia_uz --no-pub .
-      - name: Firebase client configuration
+
+      - name: Create web platform files
+        run: flutter create --platforms=web --project-name mafia_uz --no-pub .
+
+      - name: Verify Firebase client configuration
         run: |
           test -f lib/firebase_options.dart
-          echo "Using checked-in Firebase client configuration (no service account required)."
+          test -n "${{ secrets.FIREBASE_WEB_APP_ID }}"
+          test -n "${{ secrets.FIREBASE_API_KEY }}"
+          test -n "${{ secrets.FIREBASE_PROJECT_ID }}"
+          test -n "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"
+          test -n "${{ secrets.FIREBASE_AUTH_DOMAIN }}"
+          test -n "${{ secrets.FIREBASE_STORAGE_BUCKET }}"
+
       - run: flutter pub get
       - run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - run: flutter test
+
       - name: Build web release
         run: |
-          flutter build web --release --base-href /mafia-uz/ \
-            --dart-define=FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
-            --dart-define=FIREBASE_APP_ID="${{ secrets.FIREBASE_WEB_APP_ID }}" \
-            --dart-define=FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" \
-            --dart-define=FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
-            --dart-define=FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}" \
-            --dart-define=FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}" \
-            --dart-define=FIREBASE_APPCHECK_ENABLED="${{ secrets.FIREBASE_APPCHECK_ENABLED }}" \
-            --dart-define=FIREBASE_APPCHECK_WEB_SITE_KEY="${{ secrets.FIREBASE_APPCHECK_WEB_SITE_KEY }}"
+          flutter build web --release --base-href /mafia-uz/             --dart-define=FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}"             --dart-define=FIREBASE_WEB_APP_ID="${{ secrets.FIREBASE_WEB_APP_ID }}"             --dart-define=FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"             --dart-define=FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"             --dart-define=FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}"             --dart-define=FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}"             --dart-define=FIREBASE_APPCHECK_ENABLED="${{ secrets.FIREBASE_APPCHECK_ENABLED }}"             --dart-define=FIREBASE_APPCHECK_WEB_SITE_KEY="${{ secrets.FIREBASE_APPCHECK_WEB_SITE_KEY }}"
+
+      - uses: actions/configure-pages@v5
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
