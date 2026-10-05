@@ -74,7 +74,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
     });
   }
 
-  void syncTimer(String phase, int round, bool host) {
+  void syncTimer(String phase, int round, int phaseEndsAt) {
     if (phaseSeen == phase && roundSeen == round) return;
     phaseSeen = phase;
     roundSeen = round;
