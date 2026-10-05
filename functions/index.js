@@ -8,6 +8,11 @@ setGlobalOptions({ region: "asia-southeast1", maxInstances: 20, concurrency: 80 
 
 const db = getFirestore();
 const ROOM_SIZES = new Set([8, 12]);
+const PHASE_SECONDS = 30;
+
+function phaseDeadline() {
+  return Date.now() + PHASE_SECONDS * 1000;
+}
 
 function authUid(request) {
   if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Authentication required.");
@@ -185,7 +190,13 @@ exports.startGame = onCall(async request => {
       });
       tx.update(doc.ref, { alive: true, rolePublic: roles[index] === "citizen" ? "citizen" : "special" });
     });
-    tx.update(roomRef, { phase: "night", round: 1, winner: null, updatedAt: FieldValue.serverTimestamp() });
+    tx.update(roomRef, {
+      phase: "night",
+      round: 1,
+      winner: null,
+      phaseEndsAt: phaseDeadline(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
   });
   return { ok: true, phase: "night" };
 });
@@ -256,8 +267,10 @@ exports.resolveNight = onCall(async request => {
     const roomSnap = await tx.get(roomRef);
     if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
     const room = roomSnap.data();
-    if (room.hostUid !== uid) throw new HttpsError("permission-denied", "Only the host can resolve the night.");
     if (room.phase !== "night") throw new HttpsError("failed-precondition", "Not a night phase.");
+    if (Number(room.phaseEndsAt || 0) > Date.now()) {
+      throw new HttpsError("failed-precondition", "Night timer has not expired.");
+    }
     const players = (await tx.get(roomRef.collection("players"))).docs;
     const alivePlayers = players.filter(d => d.data().alive);
     const events = (await tx.get(roomRef.collection("events").where("round", "==", room.round))).docs.map(d => d.data());
@@ -279,7 +292,12 @@ exports.resolveNight = onCall(async request => {
     const winner = winnerFor(after);
     if (eliminated) tx.update(roomRef.collection("players").doc(killTarget), {alive:false});
     for (const e of checks) tx.set(roomRef.collection("private").doc(e.actorUid), {checkResult:roles.get(e.targetUid)==="mafia",round:room.round,updatedAt:FieldValue.serverTimestamp()},{merge:true});
-    tx.update(roomRef,{phase:winner?"finished":"talk",winner,updatedAt:FieldValue.serverTimestamp()});
+    tx.update(roomRef, {
+      phase: winner ? "finished" : "talk",
+      winner,
+      phaseEndsAt: winner ? null : phaseDeadline(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
     return {ok:true,phase:winner?"finished":"talk",winner,killed:eliminated?killTarget:null};
   });
 });
@@ -293,11 +311,15 @@ exports.startVote = onCall(async request => {
     const snap = await tx.get(roomRef);
     if (!snap.exists) throw new HttpsError("not-found", "Room not found.");
     const room = snap.data();
-    if (room.hostUid !== uid) {
-      throw new HttpsError("permission-denied", "Only the host can start voting.");
-    }
     if (room.phase !== "talk") throw new HttpsError("failed-precondition", "Not a talk phase.");
-    tx.update(roomRef, { phase: "vote", updatedAt: FieldValue.serverTimestamp() });
+    if (Number(room.phaseEndsAt || 0) > Date.now()) {
+      throw new HttpsError("failed-precondition", "Discussion timer has not expired.");
+    }
+    tx.update(roomRef, {
+      phase: "vote",
+      phaseEndsAt: phaseDeadline(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
   });
   return { ok: true, phase: "vote" };
 });
@@ -310,8 +332,10 @@ exports.resolveVote = onCall(async request => {
     const roomSnap = await tx.get(roomRef);
     if (!roomSnap.exists) throw new HttpsError("not-found", "Room not found.");
     const room = roomSnap.data();
-    if (room.hostUid !== uid) throw new HttpsError("permission-denied", "Only the host can resolve the vote.");
     if (room.phase !== "vote") throw new HttpsError("failed-precondition", "Not a vote phase.");
+    if (Number(room.phaseEndsAt || 0) > Date.now()) {
+      throw new HttpsError("failed-precondition", "Voting timer has not expired.");
+    }
     const players = (await tx.get(roomRef.collection("players"))).docs;
     const privateRefs = players.map(d => roomRef.collection("private").doc(d.id));
     const privateDocs = privateRefs.length ? await tx.getAll(...privateRefs) : [];
@@ -327,7 +351,13 @@ exports.resolveVote = onCall(async request => {
     const winner=winnerFor(after);
     if(eliminated) tx.update(roomRef.collection("players").doc(eliminated),{alive:false});
     if(!winner) for(const p of players) tx.set(roomRef.collection("private").doc(p.id),{round:room.round+1,checkResult:FieldValue.delete(),updatedAt:FieldValue.serverTimestamp()},{merge:true});
-    tx.update(roomRef,{phase:winner?"finished":"night",winner,round:winner?room.round:room.round+1,updatedAt:FieldValue.serverTimestamp()});
+    tx.update(roomRef, {
+      phase: winner ? "finished" : "night",
+      winner,
+      round: winner ? room.round : room.round + 1,
+      phaseEndsAt: winner ? null : phaseDeadline(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
     return {ok:true,phase:winner?"finished":"night",winner,eliminated};
   });
 });
