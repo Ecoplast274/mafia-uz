@@ -1,6 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
+/// Firebase client configuration.
+///
+/// Web builds receive the registered Web app ID/config through --dart-define
+/// in CI. Android keeps the currently registered app as a safe fallback so
+/// local APK builds continue to work.
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) return web;
@@ -12,24 +17,39 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // Web build: keep the client configuration in source so GitHub Pages builds
-  // do not depend on --dart-define values being supplied by the deployment.
-  // Project: mafia-uz-82794
   static const web = FirebaseOptions(
-    apiKey: 'AIzaSyBpZ5NUYKkRkZV2xx-gWY4ocN46rBJSyKI',
-    appId: '1:692056725984:android:8f9f38f30cd5b0ca7db385',
-    messagingSenderId: '692056725984',
-    projectId: 'mafia-uz-82794',
-    authDomain: 'mafia-uz-82794.firebaseapp.com',
-    storageBucket: 'mafia-uz-82794.firebasestorage.app',
+    apiKey: String.fromEnvironment('FIREBASE_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_WEB_APP_ID'),
+    messagingSenderId: String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: String.fromEnvironment(
+      'FIREBASE_PROJECT_ID',
+      defaultValue: 'mafia-uz-82794',
+    ),
+    authDomain: String.fromEnvironment('FIREBASE_AUTH_DOMAIN'),
+    storageBucket: String.fromEnvironment('FIREBASE_STORAGE_BUCKET'),
   );
 
-  // Android Firebase client registered in project mafia-uz-82794.
   static const android = FirebaseOptions(
-    apiKey: 'AIzaSyBpZ5NUYKkRkZV2xx-gWY4ocN46rBJSyKI',
-    appId: '1:692056725984:android:8f9f38f30cd5b0ca7db385',
-    messagingSenderId: '692056725984',
-    projectId: 'mafia-uz-82794',
-    storageBucket: 'mafia-uz-82794.firebasestorage.app',
+    apiKey: String.fromEnvironment(
+      'FIREBASE_API_KEY',
+      defaultValue: 'AIzaSyBpZ5NUYKkRkZV2xx-gWY4ocN46rBJSyKI',
+    ),
+    appId: String.fromEnvironment(
+      'FIREBASE_ANDROID_APP_ID',
+      defaultValue: '1:692056725984:android:8f9f38f30cd5b0ca7db385',
+    ),
+    messagingSenderId: String.fromEnvironment(
+      'FIREBASE_MESSAGING_SENDER_ID',
+      defaultValue: '692056725984',
+    ),
+    projectId: String.fromEnvironment(
+      'FIREBASE_PROJECT_ID',
+      defaultValue: 'mafia-uz-82794',
+    ),
+    authDomain: String.fromEnvironment('FIREBASE_AUTH_DOMAIN'),
+    storageBucket: String.fromEnvironment(
+      'FIREBASE_STORAGE_BUCKET',
+      defaultValue: 'mafia-uz-82794.firebasestorage.app',
+    ),
   );
 }
