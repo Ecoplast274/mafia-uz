@@ -32,9 +32,9 @@ class MafiaOnlineService {
       if (appCheckEnabled) {
         if (kIsWeb) {
           if (appCheckWebSiteKey.isEmpty) throw StateError('Firebase App Check web site key is missing.');
-          await FirebaseAppCheck.instance.activate(webProvider: ReCaptchaV3Provider(appCheckWebSiteKey));
+          await FirebaseAppCheck.instance.activate(providerWeb: ReCaptchaV3Provider(appCheckWebSiteKey));
         } else {
-          await FirebaseAppCheck.instance.activate(androidProvider: AndroidProvider.playIntegrity);
+          await FirebaseAppCheck.instance.activate(providerAndroid: AndroidProvider.playIntegrity);
         }
       }
       if (FirebaseAuth.instance.currentUser == null) {
