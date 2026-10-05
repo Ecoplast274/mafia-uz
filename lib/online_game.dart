@@ -60,7 +60,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
     }
   }
 
-  void schedulePhaseSync(String phase, int round, bool host) {
+  void schedulePhaseSync(String phase, int round, int phaseEndsAt) {
     if (phaseSeen == phase && roundSeen == round) return;
     if (scheduledPhase == phase && scheduledRound == round) return;
     scheduledPhase = phase;
@@ -69,7 +69,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
       if (!mounted || scheduledPhase != phase || scheduledRound != round) return;
       scheduledPhase = null;
       scheduledRound = null;
-      syncTimer(phase, round, host);
+      syncTimer(phase, round, phaseEndsAt);
       if (phase == 'night' && round > 0) loadRole(round);
     });
   }
@@ -79,23 +79,28 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
     phaseSeen = phase;
     roundSeen = round;
     timer?.cancel();
-    seconds = 30;
     target = null;
     sent = false;
     if (phase != 'night' && phase != 'talk' && phase != 'vote') return;
-    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+    final deadline = phaseEndsAt > 0
+        ? phaseEndsAt
+        : DateTime.now().millisecondsSinceEpoch;
+    void tick() {
       if (!mounted) return;
-      if (seconds <= 1) {
-        t.cancel();
-        setState(() => seconds = 0);
-        if (!host) return;
-        if (phase == 'night') resolveNight();
-        if (phase == 'talk') startVote();
-        if (phase == 'vote') resolveVote();
-        return;
-      }
-      setState(() => seconds--);
-    });
+      final remainingMs =
+          deadline - DateTime.now().millisecondsSinceEpoch;
+      final remaining = remainingMs <= 0
+          ? 0
+          : (remainingMs / 1000).ceil();
+      setState(() => seconds = remaining);
+      if (remaining != 0) return;
+      timer?.cancel();
+      if (phase == 'night') resolveNight();
+      if (phase == 'talk') startVote();
+      if (phase == 'vote') resolveVote();
+    }
+    tick();
+    timer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
   }
 
   Future<void> send(String type) async {
@@ -226,8 +231,9 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
           final data = rs.data!.data()!;
           final phase = data['phase']?.toString() ?? 'lobby';
           final round = (data['round'] as num?)?.toInt() ?? 0;
+          final phaseEndsAt = (data['phaseEndsAt'] as num?)?.toInt() ?? 0;
           final host = data['hostUid'] == service.user?.uid;
-          schedulePhaseSync(phase, round, host);
+          schedulePhaseSync(phase, round, phaseEndsAt);
 
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: playersStream,
@@ -262,8 +268,8 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                     child: Column(children: [
                       const Text('Muhokama vaqti. Tirik o‘yinchilar gaplashadi.',
                         textAlign: TextAlign.center),
-                      if (host) FilledButton(
-                        onPressed: busy ? null : startVote,
+                      FilledButton(
+                        onPressed: busy || seconds > 0 ? null : startVote,
                         child: const Text('Ovoz berishga o‘tish')),
                     ]))),
                   if (phase == 'vote') Card(child: Padding(
