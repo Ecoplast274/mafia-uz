@@ -38,20 +38,15 @@ jobs:
       - name: Verify Firebase client configuration
         run: |
           test -f lib/firebase_options.dart
-          test -n "${{ secrets.FIREBASE_WEB_APP_ID }}"
-          test -n "${{ secrets.FIREBASE_API_KEY }}"
-          test -n "${{ secrets.FIREBASE_PROJECT_ID }}"
-          test -n "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"
-          test -n "${{ secrets.FIREBASE_AUTH_DOMAIN }}"
-          test -n "${{ secrets.FIREBASE_STORAGE_BUCKET }}"
+          grep -q "mafia-uz-82794" lib/firebase_options.dart
+          grep -q "web:add73fbd7dbfb2487db385" lib/firebase_options.dart
 
       - run: flutter pub get
       - run: flutter analyze --no-fatal-warnings --no-fatal-infos
       - run: flutter test
 
       - name: Build web release
-        run: |
-          flutter build web --release --base-href /mafia-uz/             --dart-define=FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}"             --dart-define=FIREBASE_WEB_APP_ID="${{ secrets.FIREBASE_WEB_APP_ID }}"             --dart-define=FIREBASE_MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"             --dart-define=FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"             --dart-define=FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}"             --dart-define=FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}"             --dart-define=FIREBASE_APPCHECK_ENABLED="${{ secrets.FIREBASE_APPCHECK_ENABLED }}"             --dart-define=FIREBASE_APPCHECK_WEB_SITE_KEY="${{ secrets.FIREBASE_APPCHECK_WEB_SITE_KEY }}"
+        run: flutter build web --release --base-href /mafia-uz/
 
       - uses: actions/configure-pages@v5
 
