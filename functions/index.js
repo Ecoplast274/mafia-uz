@@ -121,7 +121,16 @@ async function ensureUserProfile(uid, name) {
       updatedAt: FieldValue.serverTimestamp(),
     });
   } else {
-    await ref.set({ name, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    const current = snap.data() || {};
+    const patch = { name, updatedAt: FieldValue.serverTimestamp() };
+    if (!current.wallet) {
+      patch.wallet = {
+        tokens: 0,
+        lifetimePurchasedTokens: 0,
+        lifetimeSpentTokens: 0,
+      };
+    }
+    await ref.set(patch, { merge: true });
   }
 }
 
