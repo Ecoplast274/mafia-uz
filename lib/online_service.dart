@@ -92,6 +92,32 @@ class MafiaOnlineService {
     _requireReady();
     await functions.httpsCallable('resolveVote').call({'roomId': roomId});
   }
+
+  Future<Map<String, dynamic>> getEconomyCatalog() async {
+    _requireReady();
+    final result = await functions.httpsCallable('getEconomyCatalog').call();
+    return Map<String, dynamic>.from(result.data as Map);
+  }
+
+  Future<Map<String, dynamic>> getGiftCatalog() async {
+    _requireReady();
+    final result = await functions.httpsCallable('getGiftCatalog').call();
+    return Map<String, dynamic>.from(result.data as Map);
+  }
+
+  Future<Map<String, dynamic>> sendGift({
+    required String roomId,
+    required String recipientUid,
+    required String giftId,
+  }) async {
+    _requireReady();
+    final result = await functions.httpsCallable('sendGift').call({
+      'roomId': roomId,
+      'recipientUid': recipientUid,
+      'giftId': giftId,
+    });
+    return Map<String, dynamic>.from(result.data as Map);
+  }
   Stream<DocumentSnapshot<Map<String, dynamic>>> roomStream(String roomId) {
     _requireReady();
     return FirebaseFirestore.instance.doc('rooms/' + roomId).snapshots();
