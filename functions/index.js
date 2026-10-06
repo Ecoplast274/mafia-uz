@@ -77,6 +77,99 @@ function winnerFor(players) {
   return null;
 }
 
+
+async function ensureUserProfile(uid, name) {
+  const ref = db.doc(`users/${uid}`);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    await ref.set({
+      uid,
+      name,
+      language: "uz",
+      avatar: null,
+      coins: 0,
+      xp: 0,
+      level: 1,
+      stats: {
+        games: 0,
+        wins: 0,
+        losses: 0,
+        mafiaWins: 0,
+        citizenWins: 0,
+        doctorWins: 0,
+        sheriffWins: 0,
+        kills: 0,
+        saves: 0,
+        checks: 0,
+        votes: 0,
+        giftsSent: 0,
+        giftsReceived: 0,
+      },
+      settings: { sound: true, notifications: true },
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } else {
+    await ref.set({ name, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  }
+}
+
+function gameHistoryData(room, roomId) {
+  return {
+    gameId: roomId,
+    roomId,
+    size: room.size,
+    round: Number(room.round || 0),
+    winner: room.winner || null,
+    startedAt: room.startedAt || null,
+    finishedAt: FieldValue.serverTimestamp(),
+  };
+}
+
+async function finalizeGame(tx, roomRef, room, players, winner) {
+  const gameRef = db.collection("gameSessions").doc(room.roomId);
+  tx.set(gameRef, {
+    ...gameHistoryData({ ...room, winner }, room.roomId),
+    status: "finished",
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  for (const p of players) {
+    const uid = p.id;
+    const player = p.data();
+    const profileRef = db.doc(`users/${uid}`);
+    const historyRef = profileRef.collection("games").doc(room.roomId);
+    const role = player.role || null;
+    const win = (winner === "mafia" && role === "mafia") ||
+      (winner === "citizen" && role !== "mafia");
+
+    tx.set(profileRef, {
+      uid,
+      name: player.name || uid,
+      stats: {
+        games: FieldValue.increment(1),
+        wins: FieldValue.increment(win ? 1 : 0),
+        losses: FieldValue.increment(win ? 0 : 1),
+        mafiaWins: FieldValue.increment(win && role === "mafia" ? 1 : 0),
+        citizenWins: FieldValue.increment(win && role === "citizen" ? 1 : 0),
+        doctorWins: FieldValue.increment(win && role === "doctor" ? 1 : 0),
+        sheriffWins: FieldValue.increment(win && role === "sheriff" ? 1 : 0),
+      },
+      xp: FieldValue.increment(win ? 100 : 25),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    tx.set(historyRef, {
+      ...gameHistoryData({ ...room, winner }, room.roomId),
+      playerName: player.name || uid,
+      role,
+      won: win,
+      alive: player.alive !== false,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+}
+
 exports.createRoom = onCall(async request => {
   const uid = authUid(request);
   const size = Number(request.data?.size);
@@ -97,6 +190,18 @@ exports.createRoom = onCall(async request => {
           uid, name, seat: 0, alive: true, joinedAt: FieldValue.serverTimestamp()
         });
       });
+      await ensureUserProfile(uid, name);
+      await db.collection("gameSessions").doc(roomId).set({
+        gameId: roomId,
+        roomId,
+        size,
+        status: "lobby",
+        phase: "lobby",
+        round: 0,
+        winner: null,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
       return { roomId, size, host: true };
     } catch (e) {
       if (e.message !== "collision") throw e;
@@ -133,6 +238,7 @@ exports.joinRoom = onCall(async request => {
   });
 
   const room = (await roomRef.get()).data();
+  await ensureUserProfile(uid, name);
   return { roomId, size: room.size, host: room.hostUid === uid };
 });
 
@@ -194,9 +300,23 @@ exports.startGame = onCall(async request => {
       phase: "night",
       round: 1,
       winner: null,
+      status: "active",
+      startedAt: FieldValue.serverTimestamp(),
       phaseEndsAt: phaseDeadline(),
       updatedAt: FieldValue.serverTimestamp()
     });
+    tx.set(db.collection("gameSessions").doc(roomId), {
+      gameId: roomId,
+      roomId,
+      size: room.size,
+      status: "active",
+      phase: "night",
+      round: 1,
+      winner: null,
+      hostUid: room.hostUid,
+      startedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
   });
   return { ok: true, phase: "night" };
 });
@@ -294,10 +414,19 @@ exports.resolveNight = onCall(async request => {
     for (const e of checks) tx.set(roomRef.collection("private").doc(e.actorUid), {checkResult:roles.get(e.targetUid)==="mafia",round:room.round,updatedAt:FieldValue.serverTimestamp()},{merge:true});
     tx.update(roomRef, {
       phase: winner ? "finished" : "talk",
+      status: winner ? "finished" : "active",
       winner,
       phaseEndsAt: winner ? null : phaseDeadline(),
       updatedAt: FieldValue.serverTimestamp()
     });
+    if (winner) await finalizeGame(tx, roomRef, room, players, winner);
+    tx.set(db.collection("gameSessions").doc(roomId), {
+      phase: winner ? "finished" : "talk",
+      status: winner ? "finished" : "active",
+      winner,
+      round: room.round,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
     return {ok:true,phase:winner?"finished":"talk",winner,killed:eliminated?killTarget:null};
   });
 });
@@ -353,15 +482,71 @@ exports.resolveVote = onCall(async request => {
     if(!winner) for(const p of players) tx.set(roomRef.collection("private").doc(p.id),{round:room.round+1,checkResult:FieldValue.delete(),updatedAt:FieldValue.serverTimestamp()},{merge:true});
     tx.update(roomRef, {
       phase: winner ? "finished" : "night",
+      status: winner ? "finished" : "active",
       winner,
       round: winner ? room.round : room.round + 1,
       phaseEndsAt: winner ? null : phaseDeadline(),
       updatedAt: FieldValue.serverTimestamp()
     });
+    if (winner) await finalizeGame(tx, roomRef, room, players, winner);
+    tx.set(db.collection("gameSessions").doc(roomId), {
+      phase: winner ? "finished" : "night",
+      status: winner ? "finished" : "active",
+      winner,
+      round: winner ? room.round : room.round + 1,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
     return {ok:true,phase:winner?"finished":"night",winner,eliminated};
   });
 });
 
+
+
+exports.updateProfile = onCall(async request => {
+  const uid = authUid(request);
+  const name = cleanName(request.data?.name);
+  const language = String(request.data?.language ?? "uz");
+  if (!["uz", "ru", "en"].includes(language)) {
+    throw new HttpsError("invalid-argument", "Unsupported language.");
+  }
+  await ensureUserProfile(uid, name);
+  await db.doc(`users/${uid}`).set({
+    name,
+    language,
+    avatar: request.data?.avatar ?? null,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+  return { ok: true };
+});
+
+exports.sendMessage = onCall(async request => {
+  const uid = authUid(request);
+  const roomId = cleanRoomId(request.data?.roomId);
+  const text = String(request.data?.text ?? "").trim();
+  if (!text || text.length > 500) {
+    throw new HttpsError("invalid-argument", "Message must be 1-500 characters.");
+  }
+  const roomRef = db.doc(`rooms/${roomId}`);
+  const playerRef = roomRef.collection("players").doc(uid);
+  const player = await playerRef.get();
+  if (!player.exists) throw new HttpsError("permission-denied", "You are not in this room.");
+  await roomRef.collection("messages").add({
+    senderUid: uid,
+    senderName: player.data().name,
+    text,
+    round: 0,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  return { ok: true };
+});
+
+exports.getMyStats = onCall(async request => {
+  const uid = authUid(request);
+  const snap = await db.doc(`users/${uid}`).get();
+  if (!snap.exists) await ensureUserProfile(uid, "O'yinchi");
+  const profile = (await db.doc(`users/${uid}`).get()).data();
+  return { profile };
+});
 
 const GIFT_CATALOG = [
   { id: "rose", emoji: "🌹", name: "Atirgul" },
