@@ -1025,14 +1025,14 @@ class _GamePageState extends State<GamePage> {
     }
 
     const gifts = <Map<String, String>>[
-      {'emoji': '🌹', 'name': 'Atirgul'},
-      {'emoji': '🎁', 'name': 'Sirli sovg‘a'},
-      {'emoji': '💎', 'name': 'Olmos'},
-      {'emoji': '👑', 'name': 'Toj'},
-      {'emoji': '❤️', 'name': 'Yurak'},
-      {'emoji': '🍫', 'name': 'Shokolad'},
-      {'emoji': '🎂', 'name': 'Tort'},
-      {'emoji': '🧸', 'name': 'Ayiqcha'},
+      {'emoji': '🌹', 'name': 'Atirgul', 'price': '100'},
+      {'emoji': '🎁', 'name': 'Sirli sovg‘a', 'price': '200'},
+      {'emoji': '❤️', 'name': 'Yurak', 'price': '300'},
+      {'emoji': '🍫', 'name': 'Shokolad', 'price': '500'},
+      {'emoji': '🎂', 'name': 'Tort', 'price': '1 000'},
+      {'emoji': '🧸', 'name': 'Ayiqcha', 'price': '2 000'},
+      {'emoji': '💎', 'name': 'Olmos', 'price': '5 000'},
+      {'emoji': '👑', 'name': 'Toj', 'price': '10 000'},
     ];
 
     Player? sender;
@@ -1120,6 +1120,12 @@ class _GamePageState extends State<GamePage> {
                                 const SizedBox(height: 4),
                                 Text(g['name']!, textAlign: TextAlign.center,
                                     style: const TextStyle(fontSize: 11)),
+                                Text(g['price']! + ' so‘m • TEST TEKIN',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 9, color: Colors.greenAccent,
+                                      fontWeight: FontWeight.w800,
+                                    )),
                               ],
                             ),
                           ),
@@ -1136,7 +1142,7 @@ class _GamePageState extends State<GamePage> {
                         _showQuickAction('Sovg‘a yuborildi', msg);
                       } : null,
                       icon: const Icon(Icons.send),
-                      label: const Text('Sovg‘ani yuborish'),
+                      label: const Text('Sovg‘ani yuborish • TEST TEKIN'),
                     ),
                   ),
                 ],
