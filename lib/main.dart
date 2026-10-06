@@ -1856,11 +1856,11 @@ class _GamePageState extends State<GamePage> {
                 left: 8,
                 child: IgnorePointer(child: _gameHeader()),
               ),
-            if (stage != Stage.setup && stage != Stage.reveal)
+            if (stage != Stage.reveal)
               Positioned.fill(
                 child: IgnorePointer(
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
+                    duration: const Duration(milliseconds: 700),
                     child: SvgPicture.asset(
                       stage == Stage.night
                           ? 'assets/night_room.svg'
@@ -2000,20 +2000,41 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _setup() => ListView(padding: const EdgeInsets.all(20), children: [
-        const SizedBox(height: 28),
-        Center(child: _hero(Icons.theater_comedy, _violet, size: 78)),
+  Widget _setup() => ListView(padding: const EdgeInsets.fromLTRB(16, 14, 16, 28), children: [
         const SizedBox(height: 18),
-        Text(t('appTitle'),
-            textAlign: TextAlign.center,
-            style: _big?.copyWith(letterSpacing: 8)),
-        const SizedBox(height: 4),
-        Text(
-          t('subtitle'),
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white60, fontSize: 14, letterSpacing: 0.4),
+        _card(
+          color: _gold,
+          pad: const EdgeInsets.fromLTRB(18, 22, 18, 20),
+          child: Column(
+            children: [
+              _hero(Icons.theater_comedy, _gold, size: 62),
+              const SizedBox(height: 14),
+              Text(
+                t('appTitle'),
+                textAlign: TextAlign.center,
+                style: _big?.copyWith(
+                  letterSpacing: 9,
+                  fontSize: 34,
+                  shadows: const [
+                    Shadow(color: Colors.black54, blurRadius: 14, offset: Offset(0, 3)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                t('subtitle'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  letterSpacing: 0.4,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 10),
         _onlineCard(),
         const SizedBox(height: 10),
         OutlinedButton.icon(
