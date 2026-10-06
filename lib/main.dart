@@ -1018,11 +1018,26 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _openGiftPicker() {
-    final targets = alive.toList();
-    if (targets.isEmpty) {
-      _showQuickAction('Sovg‘a', 'Tirik o‘yinchi yo‘q.');
+    final allPlayers = players.toList();
+    if (allPlayers.length < 2) {
+      _showQuickAction('Sovg‘a', 'Kamida 2 ta o‘yinchi kerak.');
       return;
     }
+
+    const gifts = <Map<String, String>>[
+      {'emoji': '🌹', 'name': 'Atirgul'},
+      {'emoji': '🎁', 'name': 'Sirli sovg‘a'},
+      {'emoji': '💎', 'name': 'Olmos'},
+      {'emoji': '👑', 'name': 'Toj'},
+      {'emoji': '❤️', 'name': 'Yurak'},
+      {'emoji': '🍫', 'name': 'Shokolad'},
+      {'emoji': '🎂', 'name': 'Tort'},
+      {'emoji': '🧸', 'name': 'Ayiqcha'},
+    ];
+
+    Player? sender;
+    Player? recipient;
+    Map<String, String>? gift;
 
     showModalBottomSheet(
       context: context,
@@ -1031,57 +1046,168 @@ class _GamePageState extends State<GamePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (sheetCtx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 38,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const Text(
-                'Kimga sovg‘a yuborasiz?',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final canSend = sender != null && recipient != null &&
+              gift != null && sender != recipient;
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final p in targets)
-                    ChoiceChip(
-                      avatar: CircleAvatar(
-                        backgroundColor:
-                            avatarColors[players.indexOf(p) % avatarColors.length],
-                        child: Text(ini(p.name)),
+                  Center(child: Container(
+                    width: 38, height: 4,
+                    decoration: BoxDecoration(color: Colors.white24,
+                        borderRadius: BorderRadius.circular(4)),
+                  )),
+                  const SizedBox(height: 14),
+                  const Center(child: Text('🎁 Sovg‘alar',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900))),
+                  const SizedBox(height: 16),
+                  const Text('Kim yuboradi?',
+                      style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 7, runSpacing: 7, children: [
+                    for (final p in allPlayers)
+                      ChoiceChip(
+                        label: Text('№${players.indexOf(p) + 1} ${p.name}'),
+                        selected: sender == p,
+                        onSelected: (_) => setSheet(() => sender = p),
                       ),
-                      label: Text('№${players.indexOf(p) + 1} ${p.name}'),
-                      selected: false,
-                      onSelected: (selected) {
-                        if (!selected) return;
+                  ]),
+                  const SizedBox(height: 14),
+                  const Text('Kimga yuboriladi?',
+                      style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 7, runSpacing: 7, children: [
+                    for (final p in allPlayers)
+                      ChoiceChip(
+                        label: Text('№${players.indexOf(p) + 1} ${p.name}'),
+                        selected: recipient == p,
+                        onSelected: sender == p ? null : (_) =>
+                            setSheet(() => recipient = p),
+                      ),
+                  ]),
+                  const SizedBox(height: 14),
+                  const Text('Sovg‘ani tanlang',
+                      style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: .9,
+                    children: [
+                      for (final g in gifts)
+                        InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => setSheet(() => gift = g),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: gift == g ? _violet.withAlpha(90)
+                                  : Colors.black.withAlpha(100),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: gift == g ? _violet : Colors.white12),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(g['emoji']!, style: const TextStyle(fontSize: 30)),
+                                const SizedBox(height: 4),
+                                Text(g['name']!, textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: canSend ? () {
+                        final msg = '${gift!['emoji']} ${gift!['name']} — ${sender!.name} ➜ ${recipient!.name}';
                         Navigator.pop(sheetCtx);
-                        _showQuickAction(
-                          'Sovg‘a',
-                          '№${players.indexOf(p) + 1} ${p.name}ga sovg‘a yuborildi.',
-                        );
-                      },
+                        _showQuickAction('Sovg‘a yuborildi', msg);
+                      } : null,
+                      icon: const Icon(Icons.send),
+                      label: const Text('Sovg‘ani yuborish'),
                     ),
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _openGameInfo() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _panel,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Center(child: Text('📖 MAFIYA — O‘YIN QOIDALARI',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+            const SizedBox(height: 18),
+            const Text('🎯 Maqsad', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 5),
+            const Text('Tinch aholi mafiyani topib chiqarishi kerak. Mafiya esa son jihatdan ustun kelishi kerak.'),
+            const SizedBox(height: 14),
+            const Text('🎭 Rollar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 8),
+            _infoRole(Icons.theater_comedy, _red, 'Mafiya', 'Har tunda bitta o‘yinchini nishonga oladi.'),
+            _infoRole(Icons.medical_services, _green, 'Doktor', 'Har tunda bitta o‘yinchini qutqaradi.'),
+            _infoRole(Icons.local_police, _blue, 'Komissar', 'Har tunda bitta o‘yinchini tekshiradi: mafiya yoki yo‘q.'),
+            _infoRole(Icons.person, _gold, 'Tinch aholi', 'Muhokama va ovoz berish orqali mafiyani topishga harakat qiladi.'),
+            const SizedBox(height: 14),
+            const Text('🌙 Tun', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 5),
+            const Text('Mafiya hujum qiladi, doktor qutqaradi, komissar tekshiradi.'),
+            const SizedBox(height: 12),
+            const Text('☀️ Kun', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 5),
+            const Text('O‘yinchilar muhokama qiladi va ovoz berib bir o‘yinchini chiqaradi.'),
+            const SizedBox(height: 12),
+            const Text('🏆 G‘alaba', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 5),
+            const Text('Mafiya soni qolgan tinch aholi soniga tenglashsa yoki oshsa — mafiya g‘alaba qiladi. Aks holda tinch aholi g‘alaba qiladi.'),
+          ]),
         ),
       ),
     );
   }
+
+  Widget _infoRole(IconData icon, Color color, String title, String text) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 9),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          CircleAvatar(radius: 18, backgroundColor: color.withAlpha(45),
+              child: Icon(icon, color: color, size: 20)),
+          const SizedBox(width: 10),
+          Expanded(child: RichText(text: TextSpan(
+            style: const TextStyle(color: Colors.white70, height: 1.25),
+            children: [
+              TextSpan(text: '${title} — ', style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+              TextSpan(text: text),
+            ],
+          ))),
+        ]),
+      );
 
   void _showQuickAction(String title, String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -1895,6 +2021,12 @@ class _GamePageState extends State<GamePage> {
         ),
         const SizedBox(height: 18),
         _onlineCard(),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _openGameInfo,
+          icon: const Icon(Icons.menu_book),
+          label: const Text('O‘yin qoidalari, rollar va ma’lumotlar'),
+        ),
         const SizedBox(height: 12),
         Row(children: [
           _roomCard(8, t('roomOddiy'), Icons.groups),
