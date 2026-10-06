@@ -27,3 +27,4 @@ flutter:
   assets:
     - assets/day_room.svg
     - assets/night_room.svg
+    - assets/sponsors/les_ailles_test.svg
