@@ -1480,15 +1480,14 @@ class _GamePageState extends State<GamePage> {
                       color: Colors.black.withAlpha(95),
                       border: Border.all(color: _gold.withAlpha(70)),
                     ),
-                    child: const Center(
-                      child: Text(
-                        'MAFIA',
-                        style: TextStyle(
-                          color: Color(0x66FFFFFF),
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 3,
-                        ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: SvgPicture.asset(
+                        'assets/sponsors/les_ailles_test.svg',
+                        width: tableSize * .42,
+                        height: tableSize * .42,
+                        fit: BoxFit.contain,
+                        semanticsLabel: 'Sponsor',
                       ),
                     ),
                   ),
