@@ -361,3 +361,89 @@ exports.resolveVote = onCall(async request => {
     return {ok:true,phase:winner?"finished":"night",winner,eliminated};
   });
 });
+
+
+const GIFT_CATALOG = [
+  { id: "rose", emoji: "🌹", name: "Atirgul" },
+  { id: "mystery", emoji: "🎁", name: "Sirli sovg'a" },
+  { id: "diamond", emoji: "💎", name: "Olmos" },
+  { id: "crown", emoji: "👑", name: "Toj" },
+  { id: "heart", emoji: "❤️", name: "Yurak" },
+  { id: "chocolate", emoji: "🍫", name: "Shokolad" },
+  { id: "cake", emoji: "🎂", name: "Tort" },
+  { id: "teddy", emoji: "🧸", name: "Ayiqcha" },
+];
+
+exports.getGiftCatalog = onCall(async request => {
+  authUid(request);
+  const ref = db.collection("giftCatalog");
+  const snap = await ref.get();
+
+  if (snap.empty) {
+    const batch = db.batch();
+    for (const gift of GIFT_CATALOG) {
+      batch.set(ref.doc(gift.id), {
+        ...gift,
+        active: true,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+    return { gifts: GIFT_CATALOG.map(g => ({ ...g, active: true })) };
+  }
+
+  return {
+    gifts: snap.docs
+      .map(d => d.data())
+      .filter(g => g.active !== false)
+      .sort((a, b) => String(a.id).localeCompare(String(b.id))),
+  };
+});
+
+exports.sendGift = onCall(async request => {
+  const uid = authUid(request);
+  const roomId = cleanRoomId(request.data?.roomId);
+  const recipientUid = String(request.data?.recipientUid ?? "").trim();
+  const giftId = String(request.data?.giftId ?? "").trim();
+
+  if (!recipientUid || recipientUid === uid) {
+    throw new HttpsError("invalid-argument", "Choose another player.");
+  }
+  if (!giftId) {
+    throw new HttpsError("invalid-argument", "Gift is required.");
+  }
+
+  const roomRef = db.doc(`rooms/${roomId}`);
+  const senderRef = roomRef.collection("players").doc(uid);
+  const recipientRef = roomRef.collection("players").doc(recipientUid);
+  const giftRef = db.collection("giftCatalog").doc(giftId);
+
+  await db.runTransaction(async tx => {
+    const [roomSnap, senderSnap, recipientSnap, giftSnap] = await Promise.all([
+      tx.get(roomRef),
+      tx.get(senderRef),
+      tx.get(recipientRef),
+      tx.get(giftRef),
+    ]);
+
+    if (!roomSnap.exists || !senderSnap.exists || !recipientSnap.exists) {
+      throw new HttpsError("not-found", "Player or room not found.");
+    }
+    if (!giftSnap.exists || giftSnap.data().active === false) {
+      throw new HttpsError("not-found", "Gift not found.");
+    }
+
+    tx.create(roomRef.collection("gifts").doc(), {
+      senderUid: uid,
+      senderName: senderSnap.data().name,
+      recipientUid,
+      recipientName: recipientSnap.data().name,
+      giftId,
+      gift: giftSnap.data(),
+      round: Number(roomSnap.data().round || 0),
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { ok: true };
+});
