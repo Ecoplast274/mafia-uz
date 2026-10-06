@@ -126,7 +126,7 @@ function gameHistoryData(room, roomId) {
   };
 }
 
-async function finalizeGame(tx, roomRef, room, players, winner) {
+async function finalizeGame(tx, roomRef, room, players, winner, roles = new Map()) {
   const gameRef = db.collection("gameSessions").doc(room.roomId);
   tx.set(gameRef, {
     ...gameHistoryData({ ...room, winner }, room.roomId),
@@ -139,7 +139,7 @@ async function finalizeGame(tx, roomRef, room, players, winner) {
     const player = p.data();
     const profileRef = db.doc(`users/${uid}`);
     const historyRef = profileRef.collection("games").doc(room.roomId);
-    const role = player.role || null;
+    const role = roles.get(uid) || player.role || null;
     const win = (winner === "mafia" && role === "mafia") ||
       (winner === "citizen" && role !== "mafia");
 
@@ -419,7 +419,7 @@ exports.resolveNight = onCall(async request => {
       phaseEndsAt: winner ? null : phaseDeadline(),
       updatedAt: FieldValue.serverTimestamp()
     });
-    if (winner) await finalizeGame(tx, roomRef, room, players, winner);
+    if (winner) await finalizeGame(tx, roomRef, room, players, winner, roles);
     tx.set(db.collection("gameSessions").doc(roomId), {
       phase: winner ? "finished" : "talk",
       status: winner ? "finished" : "active",
