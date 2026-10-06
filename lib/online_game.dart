@@ -23,6 +23,8 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   bool busy = false;
   bool sent = false;
   bool roleLoading = false;
+  bool giftLoading = false;
+  List<Map<String, dynamic>> giftCatalog = [];
   String? scheduledPhase;
   int? scheduledRound;
   String? phaseSeen;
@@ -139,6 +141,154 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   Future<void> resolveVote() async {
     if (busy) return;
     try { await service.resolveVote(widget.roomId); } catch (_) {}
+  }
+
+  Future<void> openGiftPicker(
+    BuildContext context,
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    if (giftLoading) return;
+    setState(() => giftLoading = true);
+    try {
+      final data = await service.getGiftCatalog();
+      final raw = (data['gifts'] as List?) ?? const [];
+      giftCatalog = raw
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sovg‘alar yuklanmadi: $e')),
+        );
+      }
+      return;
+    } finally {
+      if (mounted) setState(() => giftLoading = false);
+    }
+
+    if (!mounted || giftCatalog.isEmpty) return;
+    final recipients = docs.where((d) => d.id != service.user?.uid).toList();
+    String? recipientUid;
+    Map<String, dynamic>? selectedGift;
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      isScrollControlled: true,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final canSend = recipientUid != null && selectedGift != null;
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text('🎁 Sovg‘a yuborish',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('Kimga?', style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8, runSpacing: 8,
+                    children: [
+                      for (final p in recipients)
+                        ChoiceChip(
+                          label: Text((p.data()['name'] ?? p.id).toString()),
+                          selected: recipientUid == p.id,
+                          onSelected: (_) => setSheet(() => recipientUid = p.id),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Sovg‘a', style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  GridView.count(
+                    crossAxisCount: 4,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: .85,
+                    children: [
+                      for (final g in giftCatalog)
+                        InkWell(
+                          onTap: () => setSheet(() => selectedGift = g),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              color: selectedGift?['id'] == g['id']
+                                  ? Theme.of(context).colorScheme.primary.withAlpha(80)
+                                  : Colors.black26,
+                              border: Border.all(
+                                color: selectedGift?['id'] == g['id']
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.white12,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text((g['emoji'] ?? '🎁').toString(),
+                                  style: const TextStyle(fontSize: 28)),
+                                Text((g['name'] ?? '').toString(),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 10)),
+                                Text(
+                                  (g['priceSom'] ?? 0).toString() + ' so‘m • TEST TEKIN',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 8,
+                                    color: Colors.greenAccent,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: canSend ? () async {
+                        Navigator.pop(sheetCtx);
+                        try {
+                          await service.sendGift(
+                            roomId: widget.roomId,
+                            recipientUid: recipientUid!,
+                            giftId: selectedGift!['id'].toString(),
+                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              const SnackBar(content: Text('🎁 Sovg‘a yuborildi — test rejimida bepul.')),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(content: Text('Sovg‘a yuborilmadi: $e')),
+                            );
+                          }
+                        }
+                      } : null,
+                      icon: const Icon(Icons.card_giftcard),
+                      label: const Text('Yuborish • TEST TEKIN'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget playerList(
@@ -276,6 +426,16 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                     child: FilledButton(
                       onPressed: target == null || busy || sent ? null : () => send('vote'),
                       child: Text(sent ? 'Ovoz yuborildi' : 'Ovoz berish')))),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: FilledButton.icon(
+                        onPressed: giftLoading ? null : () => openGiftPicker(context, docs),
+                        icon: const Icon(Icons.card_giftcard),
+                        label: Text(giftLoading ? 'Sovg‘alar yuklanmoqda...' : '🎁 Sovg‘a yuborish • TEST TEKIN'),
+                      ),
+                    ),
+                  ),
                   playerList(docs, service.user?.uid, phase),
                 ],
               );
