@@ -10,6 +10,12 @@ const db = getFirestore();
 const ROOM_SIZES = new Set([8, 12]);
 const PHASE_SECONDS = 30;
 
+// Monetization is deliberately disabled during testing.
+// When production billing is enabled, payments must be verified server-side
+// before tokens or paid gifts are credited.
+const ECONOMY_TEST_MODE = true;
+const CURRENCY = "UZS";
+
 function phaseDeadline() {
   return Date.now() + PHASE_SECONDS * 1000;
 }
@@ -104,6 +110,11 @@ async function ensureUserProfile(uid, name) {
         votes: 0,
         giftsSent: 0,
         giftsReceived: 0,
+      },
+      wallet: {
+        tokens: 0,
+        lifetimePurchasedTokens: 0,
+        lifetimeSpentTokens: 0,
       },
       settings: { sound: true, notifications: true },
       createdAt: FieldValue.serverTimestamp(),
@@ -549,14 +560,28 @@ exports.getMyStats = onCall(async request => {
 });
 
 const GIFT_CATALOG = [
-  { id: "rose", emoji: "🌹", name: "Atirgul" },
-  { id: "mystery", emoji: "🎁", name: "Sirli sovg'a" },
-  { id: "diamond", emoji: "💎", name: "Olmos" },
-  { id: "crown", emoji: "👑", name: "Toj" },
-  { id: "heart", emoji: "❤️", name: "Yurak" },
-  { id: "chocolate", emoji: "🍫", name: "Shokolad" },
-  { id: "cake", emoji: "🎂", name: "Tort" },
-  { id: "teddy", emoji: "🧸", name: "Ayiqcha" },
+  { id: "rose", emoji: "🌹", name: "Atirgul", priceSom: 100 },
+  { id: "mystery", emoji: "🎁", name: "Sirli sovg'a", priceSom: 200 },
+  { id: "heart", emoji: "❤️", name: "Yurak", priceSom: 300 },
+  { id: "chocolate", emoji: "🍫", name: "Shokolad", priceSom: 500 },
+  { id: "cake", emoji: "🎂", name: "Tort", priceSom: 1000 },
+  { id: "teddy", emoji: "🧸", name: "Ayiqcha", priceSom: 2000 },
+  { id: "diamond", emoji: "💎", name: "Olmos", priceSom: 5000 },
+  { id: "crown", emoji: "👑", name: "Toj", priceSom: 10000 },
+];
+
+const TOKEN_PACKS = [
+  { id: "tokens_100", tokens: 100, priceSom: 1000 },
+  { id: "tokens_550", tokens: 550, priceSom: 5000 },
+  { id: "tokens_1200", tokens: 1200, priceSom: 10000 },
+  { id: "tokens_6500", tokens: 6500, priceSom: 50000 },
+];
+
+const ROLE_CATALOG = [
+  { id: "mafia", name: "Mafiya", tokenCost: 0, selectable: false },
+  { id: "doctor", name: "Doktor", tokenCost: 0, selectable: false },
+  { id: "sheriff", name: "Komissar", tokenCost: 0, selectable: false },
+  { id: "citizen", name: "Tinch aholi", tokenCost: 0, selectable: false },
 ];
 
 exports.getGiftCatalog = onCall(async request => {
@@ -569,19 +594,41 @@ exports.getGiftCatalog = onCall(async request => {
     for (const gift of GIFT_CATALOG) {
       batch.set(ref.doc(gift.id), {
         ...gift,
+        currency: CURRENCY,
         active: true,
+        testFree: ECONOMY_TEST_MODE,
         updatedAt: FieldValue.serverTimestamp(),
       });
     }
     await batch.commit();
-    return { gifts: GIFT_CATALOG.map(g => ({ ...g, active: true })) };
+    return {
+      testMode: ECONOMY_TEST_MODE,
+      currency: CURRENCY,
+      gifts: GIFT_CATALOG.map(g => ({
+        ...g, currency: CURRENCY, active: true, testFree: ECONOMY_TEST_MODE
+      })),
+    };
   }
 
   return {
+    testMode: ECONOMY_TEST_MODE,
+    currency: CURRENCY,
     gifts: snap.docs
       .map(d => d.data())
       .filter(g => g.active !== false)
-      .sort((a, b) => String(a.id).localeCompare(String(b.id))),
+      .sort((a, b) => Number(a.priceSom || 0) - Number(b.priceSom || 0)),
+  };
+});
+
+exports.getEconomyCatalog = onCall(async request => {
+  authUid(request);
+  return {
+    testMode: ECONOMY_TEST_MODE,
+    currency: CURRENCY,
+    gifts: GIFT_CATALOG,
+    tokenPacks: TOKEN_PACKS,
+    roles: ROLE_CATALOG,
+    note: "Real-money purchases are disabled until production billing verification is enabled.",
   };
 });
 
@@ -618,17 +665,39 @@ exports.sendGift = onCall(async request => {
       throw new HttpsError("not-found", "Gift not found.");
     }
 
+    const gift = giftSnap.data();
+    const priceSom = Number(gift.priceSom || 0);
+
     tx.create(roomRef.collection("gifts").doc(), {
       senderUid: uid,
       senderName: senderSnap.data().name,
       recipientUid,
       recipientName: recipientSnap.data().name,
       giftId,
-      gift: giftSnap.data(),
+      gift,
+      priceSom,
+      currency: CURRENCY,
+      paymentStatus: ECONOMY_TEST_MODE ? "test_free" : "verified",
+      projectRevenueSom: ECONOMY_TEST_MODE ? 0 : priceSom,
       round: Number(roomSnap.data().round || 0),
       createdAt: FieldValue.serverTimestamp(),
     });
+
+    tx.set(db.doc(`users/${uid}`), {
+      stats: { giftsSent: FieldValue.increment(1) },
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    tx.set(db.doc(`users/${recipientUid}`), {
+      stats: { giftsReceived: FieldValue.increment(1) },
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
   });
 
-  return { ok: true };
+  return {
+    ok: true,
+    testMode: ECONOMY_TEST_MODE,
+    chargedSom: 0,
+    listedPriceSom: Number((await giftRef.get()).data()?.priceSom || 0),
+  };
 });
