@@ -1,0 +1,1 @@
+Sponsor video asset is generated in the working container. This marker reserves the sponsor video asset path for the app integration.
