@@ -1285,8 +1285,10 @@ class _GamePageState extends State<GamePage> {
       Offset centerFor(int index) {
         final side = index ~/ sideCount;
         final slot = index % sideCount;
-        final usableW = w * .64;
-        final usableH = h * .68;
+        // Player seats sit outside the main square table.
+        // Keep enough clearance so avatars never overlap the tabletop.
+        final usableW = w * .90;
+        final usableH = h * .90;
         final left = (w - usableW) / 2;
         final top = (h - usableH) / 2;
         final xStep = usableW / (sideCount + 1);
