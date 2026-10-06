@@ -11,6 +11,27 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
     }
 
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+
+      match /games/{gameId} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+
+    match /gameSessions/{gameId} {
+      allow read: if signedIn() &&
+        exists(/databases/$(database)/documents/rooms/$(gameId)/players/$(request.auth.uid));
+      allow write: if false;
+    }
+
+    match /giftCatalog/{giftId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     match /rooms/{roomId} {
       allow read: if isMember(roomId);
       allow write: if false;
@@ -27,11 +48,18 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      // Action/event documents contain private actor/target information.
-      // Clients submit actions through callable Cloud Functions and must
-      // never be allowed to read the raw event stream.
       match /events/{eventId} {
         allow read, write: if false;
+      }
+
+      match /gifts/{giftId} {
+        allow read: if isMember(roomId);
+        allow write: if false;
+      }
+
+      match /messages/{messageId} {
+        allow read: if isMember(roomId);
+        allow write: if false;
       }
     }
   }
