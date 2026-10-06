@@ -1471,25 +1471,14 @@ class _GamePageState extends State<GamePage> {
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Container(
-                    width: tableSize * .46,
-                    height: tableSize * .46,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      color: Colors.black.withAlpha(95),
-                      border: Border.all(color: _gold.withAlpha(70)),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: SvgPicture.asset(
-                        'assets/sponsors/les_ailles_test.svg',
-                        width: tableSize * .42,
-                        height: tableSize * .42,
-                        fit: BoxFit.contain,
-                        semanticsLabel: 'Sponsor',
-                      ),
-                    ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: SvgPicture.asset(
+                    'assets/sponsors/les_ailles_test.svg',
+                    width: tableSize,
+                    height: tableSize,
+                    fit: BoxFit.fill,
+                    semanticsLabel: 'Sponsor reklama',
                   ),
                 ),
               ),
