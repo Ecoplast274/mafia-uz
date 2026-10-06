@@ -103,7 +103,7 @@ String roleHint(Role r, AppLang l) {
 }
 
 const Map<String, Map<String, String>> _dict = {
-  'appTitle': {'uz': 'MAFIYA', 'ru': 'МАФИЯ', 'en': 'MAFIA'},
+  'appTitle': {'uz': 'MAFIA', 'ru': 'МАФИЯ', 'en': 'MAFIA'},
   'subtitle': {
     'uz': "Shahar uxlaydi, mafiya uyg'onadi",
     'ru': 'Город спит, мафия просыпается',
