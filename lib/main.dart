@@ -1418,37 +1418,20 @@ class _GamePageState extends State<GamePage> {
     final n = players.length;
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final h = math.min(w * .92, 430.0);
-      final av = n > 10 ? 38.0 : 44.0;
-      final sw = av + 28;
-      final tableSize = math.min(w * .62, h * .68);
-      final sideCount = n == 12 ? 3 : 2;
+      final h = math.min(w * .82, 460.0);
+      final av = n > 10 ? 40.0 : 46.0;
+      final sw = av + 34;
+      final tableW = math.min(w * .88, 720.0);
+      final tableH = math.min(h * .62, 300.0);
 
-      Offset centerFor(int index) {
-        final side = index ~/ sideCount;
-        final slot = index % sideCount;
-        // Player seats sit outside the main square table.
-        // Keep enough clearance so avatars never overlap the tabletop.
-        final usableW = w * .90;
-        final usableH = h * .90;
-        final left = (w - usableW) / 2;
-        final top = (h - usableH) / 2;
-        final xStep = usableW / (sideCount + 1);
-        final yStep = usableH / (sideCount + 1);
-
-        switch (side) {
-          case 0:
-            return Offset(left + xStep * (slot + 1), top);
-          case 1:
-            return Offset(w - left, top + yStep * (slot + 1));
-          case 2:
-            return Offset(
-              w - left - xStep * (slot + 1),
-              h - top,
-            );
-          default:
-            return Offset(left, h - top - yStep * (slot + 1));
-        }
+      Offset seatCenter(int i) {
+        final angle = -math.pi / 2 + (2 * math.pi * i / n);
+        final rx = math.max((tableW / 2) + 18, (w / 2) - sw / 2 - 8);
+        final ry = math.max((tableH / 2) + 34, (h / 2) - av / 2 - 8);
+        return Offset(
+          w / 2 + math.cos(angle) * rx,
+          h / 2 + math.sin(angle) * ry,
+        );
       }
 
       return SizedBox(
@@ -1457,46 +1440,113 @@ class _GamePageState extends State<GamePage> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
+            // Lounge shadow behind the table.
+            Positioned(
+              left: w * .07,
+              right: w * .07,
+              top: h * .24,
+              bottom: h * .16,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(42),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF20150F),
+                      Color(0xFF08090E),
+                    ],
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black87,
+                      blurRadius: 34,
+                      spreadRadius: 7,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Premium oval wooden table.
             Center(
               child: Container(
-                width: tableSize,
-                height: tableSize,
+                width: tableW,
+                height: tableH,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(150),
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(0xFF6E3217),
-                      Color(0xFF321408),
-                      Color(0xFF120907),
+                      Color(0xFF8A4A22),
+                      Color(0xFF3A1A0D),
+                      Color(0xFF160B07),
                     ],
                   ),
-                  border: Border.all(color: _gold.withAlpha(115), width: 2.5),
+                  border: Border.all(
+                    color: _gold.withAlpha(150),
+                    width: 3,
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black87,
                       blurRadius: 28,
-                      spreadRadius: 5,
+                      spreadRadius: 4,
                     ),
                   ],
                 ),
+                padding: const EdgeInsets.all(10),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
-                  child: SvgPicture.asset(
-                    'assets/sponsors/les_ailles_test.svg',
-                    width: tableSize,
-                    height: tableSize,
-                    fit: BoxFit.fill,
-                    semanticsLabel: 'Sponsor reklama',
+                  borderRadius: BorderRadius.circular(140),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 1.0,
+                        colors: [
+                          Color(0xFF123B5D),
+                          Color(0xFF071A2D),
+                        ],
+                      ),
+                    ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Subtle felt pattern.
+                        CustomPaint(painter: _FeltPatternPainter()),
+                        Center(
+                          child: Opacity(
+                            opacity: .96,
+                            child: SvgPicture.asset(
+                              'assets/sponsors/les_ailles_test.svg',
+                              width: tableW * .48,
+                              height: tableH * .55,
+                              fit: BoxFit.contain,
+                              semanticsLabel: 'CHEERS reklama',
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: tableW * .18,
+                          bottom: tableH * .18,
+                          child: _tableChipRow(),
+                        ),
+                        Positioned(
+                          right: tableW * .17,
+                          bottom: tableH * .18,
+                          child: _tableChipRow(reverse: true),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
+            // Player seats are outside the tabletop.
             for (var i = 0; i < n; i++)
               Positioned(
-                left: centerFor(i).dx - sw / 2,
-                top: centerFor(i).dy - av / 2,
+                left: seatCenter(i).dx - sw / 2,
+                top: seatCenter(i).dy - av / 2,
                 width: sw,
                 child: _seat(i, av, players[i] == speaker, roles),
               ),
@@ -1506,6 +1556,27 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
+  Widget _tableChipRow({bool reverse = false}) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final c in (reverse
+              ? [const Color(0xFFFFC857), const Color(0xFFE53935), const Color(0xFF00A7D8)]
+              : [const Color(0xFF00A7D8), const Color(0xFFE53935), const Color(0xFFFFC857)]))
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: c,
+                border: Border.all(color: Colors.white70, width: 1),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black54, blurRadius: 3),
+                ],
+              ),
+            ),
+        ],
+      );
 
   // ---------- Online xona ----------
 
@@ -2398,51 +2469,3 @@ class _GamePageState extends State<GamePage> {
     return ListView(padding: const EdgeInsets.all(16), children: [
       const SizedBox(height: 48),
       Center(
-        child: _hero(
-          Icons.emoji_events,
-          winner == 'Mafiya' ? Colors.redAccent : Colors.greenAccent,
-        ),
-      ),
-      const SizedBox(height: 16),
-      Text('$winTxt${t('winSuffix')}',
-          textAlign: TextAlign.center, style: _big),
-      const SizedBox(height: 8),
-      Text(message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white70)),
-      const SizedBox(height: 16),
-      for (var i = 0; i < players.length; i++)
-        _card(
-          pad: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(children: [
-            CircleAvatar(
-              backgroundColor: roleColor(players[i].role).withAlpha(60),
-              child: Icon(roleIcon(players[i].role),
-                  color: roleColor(players[i].role)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('№${i + 1} ${players[i].name}',
-                      style: const TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.bold)),
-                  Text(roleTitle(players[i].role, lang),
-                      style: const TextStyle(color: Colors.white70)),
-                ],
-              ),
-            ),
-            Text(players[i].alive ? t('alive') : t('dead'),
-                style: TextStyle(
-                    color: players[i].alive
-                        ? Colors.greenAccent
-                        : Colors.white38)),
-          ]),
-        ),
-      const SizedBox(height: 8),
-      _btn(t('newGame'), _reset),
-      const SizedBox(height: 16),
-    ]);
-  }
-}
