@@ -2468,3 +2468,52 @@ class _GamePageState extends State<GamePage> {
     final winTxt = winner == 'Mafiya' ? t('mafiaWin') : t('citizenWin');
     return ListView(padding: const EdgeInsets.all(16), children: [
       const SizedBox(height: 48),
+      Center(
+        child: _hero(
+          Icons.emoji_events,
+          winner == 'Mafiya' ? Colors.redAccent : Colors.greenAccent,
+        ),
+      ),
+      const SizedBox(height: 16),
+      Text('$winTxt${t('winSuffix')}',
+          textAlign: TextAlign.center, style: _big),
+      const SizedBox(height: 8),
+      Text(message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70)),
+      const SizedBox(height: 16),
+      for (var i = 0; i < players.length; i++)
+        _card(
+          pad: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(children: [
+            CircleAvatar(
+              backgroundColor: roleColor(players[i].role).withAlpha(60),
+              child: Icon(roleIcon(players[i].role),
+                  color: roleColor(players[i].role)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('№${i + 1} ${players[i].name}',
+                      style: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.bold)),
+                  Text(roleTitle(players[i].role, lang),
+                      style: const TextStyle(color: Colors.white70)),
+                ],
+              ),
+            ),
+            Text(players[i].alive ? t('alive') : t('dead'),
+                style: TextStyle(
+                    color: players[i].alive
+                        ? Colors.greenAccent
+                        : Colors.white38)),
+          ]),
+        ),
+      const SizedBox(height: 8),
+      _btn(t('newGame'), _reset),
+      const SizedBox(height: 16),
+    ]);
+  }
+}
