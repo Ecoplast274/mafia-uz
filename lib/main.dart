@@ -1414,13 +1414,109 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
+  Widget _cheersAd(double w, double h) {
+    return SizedBox(
+      width: math.min(w * .72, 560),
+      height: math.min(h * .42, 220),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(120),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0A5D92), Color(0xFF06375D)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black87, blurRadius: 18, spreadRadius: 2),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 18,
+            top: 18,
+            child: Transform.rotate(
+              angle: -.07,
+              child: const Text(
+                'CHEERS',
+                style: TextStyle(
+                  fontSize: 46,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: -2,
+                  color: Colors.white,
+                  shadows: [Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(2, 3))],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 26,
+            bottom: 22,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xCCFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Text(
+                'SMETANA VA PIYOZ',
+                style: TextStyle(
+                  color: Color(0xFF17324D),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 16,
+            top: -8,
+            bottom: -12,
+            width: math.min(w * .25, 150),
+            child: Image.network(
+              'https://yastatic.net/avatars/get-grocery-goods/2783132/e4c3cdbd-ac2e-4dd1-996a-d1fe2e0af4d2/464x464-origin',
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.fastfood,
+                color: Colors.white54,
+                size: 70,
+              ),
+            ),
+          ),
+          Positioned(
+            left: w * .34,
+            bottom: 20,
+            child: Row(
+              children: const [
+                Icon(Icons.circle, size: 8, color: Color(0xFF9BD45C)),
+                SizedBox(width: 5),
+                Icon(Icons.circle, size: 6, color: Color(0xFF9BD45C)),
+                SizedBox(width: 5),
+                Icon(Icons.circle, size: 9, color: Color(0xFF9BD45C)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _table({Player? speaker, bool roles = false}) {
     final n = players.length;
+    if (n == 0) return const SizedBox.shrink();
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final h = math.min(w * .78, 520.0);
-      final rx = math.max(w * .40, 155.0);
-      final ry = math.max(h * .40, 145.0);
+      final h = math.min(w * .82, 520.0);
+      final rx = math.max(w * .42, 155.0);
+      final ry = math.max(h * .32, 118.0);
 
       Offset pos(int i) {
         final angle = -math.pi / 2 + 2 * math.pi * i / n;
@@ -1437,35 +1533,20 @@ class _GamePageState extends State<GamePage> {
           clipBehavior: Clip.none,
           children: [
             Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF160D09),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: const Color(0xFF5A3218), width: 2),
-                ),
+              child: SvgPicture.asset(
+                'assets/mafia_room_cheers.svg',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
               ),
             ),
-            Center(
-              child: Container(
-                width: math.min(w * .76, 620),
-                height: math.min(h * .48, 260),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF063554),
-                  borderRadius: BorderRadius.circular(150),
-                  border: Border.all(color: const Color(0xFFC7893B), width: 8),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black87, blurRadius: 28, spreadRadius: 5),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(140),
-                  child: Image.asset(
-                    'assets/cheers_overlay.webp',
-                    fit: BoxFit.fill,
-                    filterQuality: FilterQuality.high,
-                    semanticLabel: 'CHEERS reklama stol ustida',
-                  ),
-                ),
+            Positioned(
+              left: w * .14,
+              right: w * .14,
+              top: h * .29,
+              bottom: h * .29,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: _cheersAd(w, h),
               ),
             ),
             for (var i = 0; i < n; i++)
