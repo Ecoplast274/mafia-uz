@@ -1418,143 +1418,31 @@ class _GamePageState extends State<GamePage> {
     final n = players.length;
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final h = math.min(w * .82, 460.0);
-      final av = n > 10 ? 40.0 : 46.0;
-      final sw = av + 34;
-      final tableW = math.min(w * .88, 720.0);
-      final tableH = math.min(h * .62, 300.0);
-
+      final h = math.min(w * .88, 520.0);
+      final seatW = n > 10 ? 68.0 : 76.0;
+      final seatH = 74.0;
+      final rx = math.max(w * .39, 160.0);
+      final ry = math.max(h * .36, 150.0);
       Offset seatCenter(int i) {
         final angle = -math.pi / 2 + (2 * math.pi * i / n);
-        final rx = math.max((tableW / 2) + 18, (w / 2) - sw / 2 - 8);
-        final ry = math.max((tableH / 2) + 34, (h / 2) - av / 2 - 8);
-        return Offset(
-          w / 2 + math.cos(angle) * rx,
-          h / 2 + math.sin(angle) * ry,
-        );
+        return Offset(w / 2 + math.cos(angle) * rx, h / 2 + math.sin(angle) * ry);
       }
-
-      return SizedBox(
-        width: w,
-        height: h,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Lounge shadow behind the table.
-            Positioned(
-              left: w * .07,
-              right: w * .07,
-              top: h * .24,
-              bottom: h * .16,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(42),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF20150F),
-                      Color(0xFF08090E),
-                    ],
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black87,
-                      blurRadius: 34,
-                      spreadRadius: 7,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Premium oval wooden table.
-            Center(
-              child: Container(
-                width: tableW,
-                height: tableH,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(150),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF8A4A22),
-                      Color(0xFF3A1A0D),
-                      Color(0xFF160B07),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: _gold.withAlpha(150),
-                    width: 3,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black87,
-                      blurRadius: 28,
-                      spreadRadius: 4,
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(10),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(140),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment.center,
-                        radius: 1.0,
-                        colors: [
-                          Color(0xFF123B5D),
-                          Color(0xFF071A2D),
-                        ],
-                      ),
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // Subtle felt pattern.
-                        const SizedBox.shrink(),
-                        Center(
-                          child: Opacity(
-                            opacity: .96,
-                            child: SvgPicture.asset(
-                              'assets/sponsors/les_ailles_test.svg',
-                              width: tableW * .48,
-                              height: tableH * .55,
-                              fit: BoxFit.contain,
-                              semanticsLabel: 'CHEERS reklama',
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: tableW * .18,
-                          bottom: tableH * .18,
-                          child: _tableChipRow(),
-                        ),
-                        Positioned(
-                          right: tableW * .17,
-                          bottom: tableH * .18,
-                          child: _tableChipRow(reverse: true),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Player seats are outside the tabletop.
-            for (var i = 0; i < n; i++)
-              Positioned(
-                left: seatCenter(i).dx - sw / 2,
-                top: seatCenter(i).dy - av / 2,
-                width: sw,
-                child: _seat(i, av, players[i] == speaker, roles),
-              ),
-          ],
-        ),
-      );
+      return SizedBox(width: w, height: h, child: Stack(clipBehavior: Clip.none, children: [
+        Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(30), child: SvgPicture.asset('assets/mafia_room_cheers.svg', fit: BoxFit.cover))),
+        for (var i = 0; i < n; i++)
+          Positioned(left: seatCenter(i).dx - seatW / 2, top: seatCenter(i).dy - seatH / 2, width: seatW,
+            child: _seat(i, n > 10 ? 40 : 46, players[i] == speaker, roles)),
+        Positioned(top: 10, left: 14, child: _roomPill(Icons.groups, '${players.length}/${room}')),
+        Positioned(top: 10, right: 14, child: _roomPill(stage == Stage.night ? Icons.nightlight_round : Icons.wb_sunny, stage == Stage.night ? 'TUN' : 'KUN')),
+      ]));
     });
   }
+
+  Widget _roomPill(IconData icon, String label) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(color: const Color(0xDD05070D), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white24), boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 10)]),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 16, color: _gold), const SizedBox(width: 6), Text(label, style: const TextStyle(fontWeight: FontWeight.w900))]),
+  );
 
   Widget _tableChipRow({bool reverse = false}) => Row(
         mainAxisSize: MainAxisSize.min,
