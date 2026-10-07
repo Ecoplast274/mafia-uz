@@ -1513,7 +1513,7 @@ class _GamePageState extends State<GamePage> {
                       fit: StackFit.expand,
                       children: [
                         // Subtle felt pattern.
-                        CustomPaint(painter: _FeltPatternPainter()),
+                        const SizedBox.shrink(),
                         Center(
                           child: Opacity(
                             opacity: .96,
