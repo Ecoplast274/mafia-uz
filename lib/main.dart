@@ -2017,7 +2017,7 @@ class _GamePageState extends State<GamePage> {
           pad: const EdgeInsets.fromLTRB(18, 22, 18, 20),
           child: Column(
             children: [
-              _mafiaLogo(size: 150),
+              _hero(Icons.theater_comedy, _gold, size: 62),
               const SizedBox(height: 14),
               const SizedBox(height: 6),
               Text(
