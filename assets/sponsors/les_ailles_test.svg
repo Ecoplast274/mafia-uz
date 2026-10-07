@@ -1,1 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420"><rect width="1200" height="420" rx="18" fill="#f50057"/><text x="600" y="285" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="180" font-weight="900" font-style="italic" letter-spacing="-8" fill="#fff">LES &#65;ILES</text><text x="1060" y="105" font-family="Arial,Helvetica,sans-serif" font-size="38" font-weight="700" fill="#fff">&#174;</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0a3b66"/><stop offset="1" stop-color="#061a2b"/></linearGradient>
+  <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".45"/></filter>
+</defs>
+<rect width="1200" height="650" rx="120" fill="url(#bg)"/>
+<g filter="url(#shadow)">
+  <text x="600" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="190" font-weight="900" font-style="italic" fill="#fff" stroke="#7a1116" stroke-width="22" paint-order="stroke">CHEERS</text>
+  <path d="M315 405 Q600 520 885 405 Q760 505 600 510 Q440 505 315 405Z" fill="#ffc928" stroke="#8d1c20" stroke-width="10"/>
+</g>
+<g fill="#eeb64c" stroke="#fff" stroke-width="4" opacity=".96">
+  <path d="M135 455 l42 -20 35 28 -15 42 -49 5z"/>
+  <path d="M1010 150 l42 -20 35 28 -15 42 -49 5z"/>
+  <path d="M985 480 l42 -20 35 28 -15 42 -49 5z"/>
+</g>
+<g fill="#fff" font-family="Arial, sans-serif" text-anchor="middle">
+  <text x="600" y="570" font-size="34" font-weight="700">MAZALI ONLAYN DAM OLISH</text>
+</g>
+</svg>
