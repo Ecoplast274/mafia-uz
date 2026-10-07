@@ -594,161 +594,62 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF05070D),
+      backgroundColor: const Color(0xFF080605),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: roomStream,
         builder: (context, rs) {
           if (rs.hasError) return Center(child: Text(rs.error.toString()));
-          if (!rs.hasData || !rs.data!.exists) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          if (!rs.hasData || !rs.data!.exists) return const Center(child: CircularProgressIndicator());
           final data = rs.data!.data()!;
           final phase = data['phase']?.toString() ?? 'lobby';
           final round = (data['round'] as num?)?.toInt() ?? 0;
           final phaseEndsAt = (data['phaseEndsAt'] as num?)?.toInt() ?? 0;
           schedulePhaseSync(phase, round, phaseEndsAt);
-
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: playersStream,
             builder: (context, ps) {
               if (ps.hasError) return Center(child: Text(ps.error.toString()));
-              if (!ps.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
+              if (!ps.hasData) return const Center(child: CircularProgressIndicator());
               final docs = ps.data!.docs;
-              final winner = data['winner']?.toString();
-
-              return Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF0A1220),
-                      Color(0xFF05070D),
-                    ],
+              return SafeArea(
+                child: Column(children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+                    child: Row(children: [
+                      IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back)),
+                      const Text('MAFIA UZ', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                      const Spacer(),
+                      _onlinePill(Icons.groups, '${docs.length}/12'),
+                      const SizedBox(width: 6),
+                      _onlinePill(phase == 'night' ? Icons.nightlight_round : Icons.wb_sunny, '${seconds}s'),
+                    ]),
                   ),
-                ),
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: const Icon(Icons.arrow_back),
-                            ),
-                            const SizedBox(width: 4),
-                            const Expanded(
-                              child: Text(
-                                'MAFIA UZ',
-                                style: TextStyle(
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                            ),
-                            _onlinePill(Icons.groups, docs.length.toString() + '/12'),
-                            const SizedBox(width: 6),
-                            _onlinePill(
-                              phase == 'night'
-                                  ? Icons.nightlight_round
-                                  : Icons.wb_sunny,
-                              seconds.toString() + ' s',
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              onPressed: () {},
-                              icon: const Icon(Icons.settings_outlined),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(10, 2, 10, 16),
-                          children: [
-                            _onlineTable(docs, service.user?.uid, phase),
-                            if (phase == 'finished')
-                              Card(
-                                color: const Color(0xE611182A),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(20),
-                                  child: Center(
-                                    child: Text(
-                                      winner == 'mafia'
-                                          ? '🏆 MAFIYA G‘ALABA QILDI'
-                                          : '🏆 TINCH AHOLI G‘ALABA QILDI',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 23,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (phase == 'night') nightPanel(),
-                            if (phase == 'talk')
-                              Card(
-                                color: const Color(0xE611182A),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    children: [
-                                      const Text(
-                                        'Muhokama vaqti. Tirik o‘yinchilar gaplashadi.',
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 10),
-                                      FilledButton(
-                                        onPressed:
-                                            busy || seconds > 0 ? null : startVote,
-                                        child: const Text('Ovoz berishga o‘tish'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            if (phase == 'vote')
-                              Card(
-                                color: const Color(0xE611182A),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: FilledButton(
-                                    onPressed: target == null || busy || sent
-                                        ? null
-                                        : () => send('vote'),
-                                    child: Text(
-                                      sent ? 'Ovoz yuborildi' : 'Ovoz berish',
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            _chatBar(),
-                            const SizedBox(height: 8),
-                            _onlineActionBar(context, docs),
-                            const SizedBox(height: 8),
-                            Card(
-                              color: const Color(0xE611182A),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: playerList(
-                                  docs,
-                                  service.user?.uid,
-                                  phase,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
+                      children: [
+                        _onlineTable(docs, service.user?.uid, phase),
+                        if (phase == 'night') nightPanel(),
+                        if (phase == 'talk')
+                          _newOnlinePanel('MUHOKAMA', 'Tirik o‘yinchilar navbat bilan gaplashadi.', Icons.mic, seconds > 0 ? null : startVote),
+                        if (phase == 'vote')
+                          _newOnlinePanel('OVOZ BERISH', 'Stoldan o‘yinchini tanlang va ovoz yuboring.', Icons.how_to_vote, target == null || busy || sent ? null : () => send('vote')),
+                        const SizedBox(height: 8),
+                        Row(children: [
+                          Expanded(child: _newOnlineButton(Icons.chat_bubble_outline, 'Chat', () {})),
+                          const SizedBox(width: 8),
+                          Expanded(child: _newOnlineButton(Icons.mic, 'Gapirish', () {})),
+                          const SizedBox(width: 8),
+                          Expanded(child: _newOnlineButton(Icons.card_giftcard, 'Sovg‘a', giftLoading ? null : () => openGiftPicker(context, docs))),
+                          const SizedBox(width: 8),
+                          Expanded(child: _newOnlineButton(Icons.emoji_emotions, 'Emoji', () {})),
+                        ]),
+                        const SizedBox(height: 8),
+                        if (phase == 'night' || phase == 'vote') playerList(docs, service.user?.uid, phase),
+                      ],
+                    ),
                   ),
-                ),
+                ]),
               );
             },
           );
@@ -756,6 +657,29 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
       ),
     );
   }
+
+  Widget _newOnlinePanel(String title, String text, IconData icon, VoidCallback? action) => Container(
+    margin: const EdgeInsets.only(bottom: 10),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: const Color(0xFF17110D), borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF5A3218))),
+    child: Row(children: [
+      Icon(icon, color: const Color(0xFFFFC857)),
+      const SizedBox(width: 12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+        const SizedBox(height: 3),
+        Text(text, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+      ])),
+      FilledButton(onPressed: action, child: const Text('DAVOM')),
+    ]),
+  );
+
+  Widget _newOnlineButton(IconData icon, String label, VoidCallback? onTap) => FilledButton.tonalIcon(
+    onPressed: onTap,
+    icon: Icon(icon, size: 18),
+    label: Text(label, style: const TextStyle(fontSize: 11)),
+    style: FilledButton.styleFrom(minimumSize: const Size(0, 48), padding: const EdgeInsets.symmetric(horizontal: 6)),
+  );
 }
 
 class _MiniChip extends StatelessWidget {
