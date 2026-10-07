@@ -477,162 +477,26 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
     );
   }
 
-  Widget _onlineTable(
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
-    String? me,
-    String phase,
-  ) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final w = c.maxWidth;
-        final h = math.min(w * .82, 470.0);
-        final tableW = math.min(w * .88, 760.0);
-        final tableH = math.min(h * .60, 285.0);
-        final n = docs.length;
-
-        return SizedBox(
-          width: w,
-          height: h,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(36),
-                    gradient: const RadialGradient(
-                      center: Alignment(0, -0.2),
-                      radius: 1.2,
-                      colors: [
-                        Color(0xFF182D3C),
-                        Color(0xFF080B12),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Center(
-                child: Container(
-                  width: tableW,
-                  height: tableH,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(150),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF8A4A22),
-                        Color(0xFF3A1A0D),
-                        Color(0xFF160B07),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFFFFC857).withAlpha(170),
-                      width: 3,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black87,
-                        blurRadius: 28,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(140),
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: RadialGradient(
-                          colors: [
-                            Color(0xFF0D4167),
-                            Color(0xFF061B2D),
-                          ],
-                        ),
-                      ),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Center(
-                            child: SvgPicture.asset(
-                              'assets/sponsors/les_ailles_test.svg',
-                              width: tableW * .52,
-                              height: tableH * .64,
-                              fit: BoxFit.contain,
-                              semanticsLabel: 'CHEERS reklama',
-                            ),
-                          ),
-                          Positioned(
-                            left: tableW * .17,
-                            bottom: tableH * .16,
-                            child: Row(
-                              children: const [
-                                _MiniChip(color: Color(0xFF00A7D8)),
-                                _MiniChip(color: Color(0xFFE04B4B)),
-                                _MiniChip(color: Color(0xFFFFC857)),
-                              ],
-                            ),
-                          ),
-                          Positioned(
-                            right: tableW * .17,
-                            bottom: tableH * .16,
-                            child: Row(
-                              children: const [
-                                _MiniChip(color: Color(0xFFFFC857)),
-                                _MiniChip(color: Color(0xFFE04B4B)),
-                                _MiniChip(color: Color(0xFF00A7D8)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (n > 0)
-                for (var i = 0; i < n; i++)
-                  Builder(
-                    builder: (_) {
-                      final angle = -math.pi / 2 + 2 * math.pi * i / n;
-                      final rx = math.max(tableW / 2 + 18, w / 2 - 42);
-                      final ry = math.max(tableH / 2 + 34, h / 2 - 35);
-                      final cx = w / 2 + math.cos(angle) * rx;
-                      final cy = h / 2 + math.sin(angle) * ry;
-                      return Positioned(
-                        left: cx - 45,
-                        top: cy - 32,
-                        width: 90,
-                        child: _onlineSeat(
-                          docs[i],
-                          i,
-                          docs[i].id == me,
-                          target == docs[i].id,
-                        ),
-                      );
-                    },
-                  ),
-              Positioned(
-                top: 8,
-                left: 14,
-                child: _onlinePill(
-                  Icons.groups,
-                  docs.length.toString() + '/12',
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 14,
-                child: _onlinePill(
-                  phase == 'night' ? Icons.nightlight_round : Icons.wb_sunny,
-                  phase == 'night' ? 'Tun' : 'Kunduz',
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  Widget _onlineTable(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs, String? me, String phase) {
+    return LayoutBuilder(builder: (context, c) {
+      final w = c.maxWidth;
+      final h = math.min(w * .88, 560.0);
+      final n = docs.length;
+      final rx = math.max(w * .39, 160.0);
+      final ry = math.max(h * .36, 150.0);
+      Offset seatCenter(int i) {
+        final angle = -math.pi / 2 + 2 * math.pi * i / n;
+        return Offset(w / 2 + math.cos(angle) * rx, h / 2 + math.sin(angle) * ry);
+      }
+      return SizedBox(width: w, height: h, child: Stack(clipBehavior: Clip.none, children: [
+        Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(30), child: SvgPicture.asset('assets/mafia_room_cheers.svg', fit: BoxFit.cover))),
+        for (var i = 0; i < n; i++)
+          Positioned(left: seatCenter(i).dx - 45, top: seatCenter(i).dy - 34, width: 90,
+            child: _onlineSeat(docs[i], i, docs[i].id == me, target == docs[i].id)),
+        Positioned(top: 12, left: 16, child: _onlinePill(Icons.groups, '${docs.length}/12')),
+        Positioned(top: 12, right: 16, child: _onlinePill(phase == 'night' ? Icons.nightlight_round : Icons.wb_sunny, phase == 'night' ? 'Tun' : 'Kunduz')),
+      ]));
+    });
   }
 
   Widget _onlinePill(IconData icon, String text) => Container(
