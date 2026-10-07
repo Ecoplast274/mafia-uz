@@ -1801,14 +1801,18 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Setup is a standalone screen. Do not wrap it in the game AppBar/background,
+    // otherwise the old room artwork can leak into the top of the new interface.
+    if (stage == Stage.setup) return _setup();
+
     final body = switch (stage) {
-      Stage.setup => _setup(),
       Stage.reveal => _reveal(),
       Stage.night => _night(),
       Stage.info => _info(),
       Stage.talk => _talk(),
       Stage.vote => _vote(),
       Stage.end => _end(),
+      Stage.setup => _setup(),
     };
 
     return Scaffold(
