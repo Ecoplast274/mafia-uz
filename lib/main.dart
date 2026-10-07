@@ -818,6 +818,16 @@ class _GamePageState extends State<GamePage> {
       .displaySmall
       ?.copyWith(fontWeight: FontWeight.w800);
 
+  Widget _mafiaLogo({double size = 150}) => SizedBox(
+        width: size,
+        height: size,
+        child: SvgPicture.asset(
+          'assets/mafia_uz_logo.svg',
+          fit: BoxFit.contain,
+          semanticsLabel: 'MAFIA UZ',
+        ),
+      );
+
   Widget _hero(IconData icon, Color color, {double size = 72}) => Container(
         width: size + 44,
         height: size + 44,
@@ -2007,7 +2017,7 @@ class _GamePageState extends State<GamePage> {
           pad: const EdgeInsets.fromLTRB(18, 22, 18, 20),
           child: Column(
             children: [
-              _hero(Icons.theater_comedy, _gold, size: 62),
+              _mafiaLogo(size: 150),
               const SizedBox(height: 14),
               Text(
                 t('appTitle'),
