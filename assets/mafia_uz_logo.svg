@@ -1,17 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
 <defs>
- <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a8"/><stop offset=".35" stop-color="#d49b22"/><stop offset=".7" stop-color="#fff1a8"/><stop offset="1" stop-color="#9b6510"/></linearGradient>
- <linearGradient id="r" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff3030"/><stop offset=".55" stop-color="#9c0012"/><stop offset="1" stop-color="#ff5a32"/></linearGradient>
- <linearGradient id="k" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#252525"/><stop offset="1" stop-color="#030303"/></linearGradient>
- <filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".8"/></filter>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff3a6"/><stop offset=".45" stop-color="#d59b27"/><stop offset="1" stop-color="#8a5a10"/></linearGradient>
+ <linearGradient id="red" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f32d35"/><stop offset="1" stop-color="#7e0712"/></linearGradient>
+ <linearGradient id="black" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#242424"/><stop offset="1" stop-color="#050505"/></linearGradient>
 </defs>
-<path d="M256 18 L470 230 Q500 260 480 320 L445 425 Q435 455 400 468 L112 468 Q77 455 67 425 L32 320 Q12 260 42 230Z" fill="url(#k)" stroke="url(#g)" stroke-width="12" filter="url(#s)"/>
-<path d="M256 32 L435 225 L256 410 L77 225Z" fill="url(#r)" opacity=".7" stroke="url(#g)" stroke-width="8"/>
-<path d="M180 196 Q175 125 256 105 Q337 125 332 196 L312 260 L200 260Z" fill="#070707" stroke="url(#g)" stroke-width="6"/>
-<path d="M170 145 Q205 75 330 108 L355 145 L318 151 L190 160Z" fill="#050505" stroke="url(#g)" stroke-width="6"/>
-<path d="M190 122 Q255 88 328 115 L313 137 L205 145Z" fill="#b00012" stroke="#e8b43b" stroke-width="4"/>
-<path d="M208 255 L180 315 L222 350 L256 294 L290 350 L332 315 L304 255Z" fill="#080808" stroke="url(#g)" stroke-width="6"/>
-<path d="M237 260 L256 318 L275 260 L256 280Z" fill="url(#r)" stroke="#e8b43b" stroke-width="4"/>
-<text x="256" y="397" text-anchor="middle" font-family="Georgia,serif" font-size="92" font-weight="900" letter-spacing="2" fill="url(#g)" stroke="#1b1000" stroke-width="6" paint-order="stroke">MAFIA</text>
-<text x="256" y="457" text-anchor="middle" font-family="Georgia,serif" font-size="64" font-weight="900" letter-spacing="12" fill="url(#r)" stroke="url(#g)" stroke-width="4" paint-order="stroke">UZ</text>
+<path d="M256 20 470 235 405 455H107L42 235Z" fill="url(#black)" stroke="url(#gold)" stroke-width="12"/>
+<path d="M256 52 425 230 256 390 87 230Z" fill="url(#red)" stroke="url(#gold)" stroke-width="7"/>
+<path d="M190 188c0-55 27-88 66-88s66 33 66 88v57H190z" fill="#080808" stroke="url(#gold)" stroke-width="6"/>
+<path d="M170 135c20-53 105-72 171-20l-18 39c-46-20-88-23-140 5z" fill="#050505" stroke="url(#gold)" stroke-width="6"/>
+<path d="M191 125c35-24 91-29 138-5l-12 25c-41-13-83-14-126 5z" fill="#b20a18" stroke="#e5ae35" stroke-width="4"/>
+<path d="M198 242 174 300l46 38 36-55 36 55 46-38-24-58z" fill="#090909" stroke="url(#gold)" stroke-width="6"/>
+<path d="M238 243 256 299l18-56-18 20z" fill="url(#red)" stroke="#e5ae35" stroke-width="4"/>
+<text x="256" y="387" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" letter-spacing="2" fill="url(#gold)" stroke="#120d05" stroke-width="5" paint-order="stroke">MAFIA</text>
+<text x="256" y="445" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="52" font-weight="900" letter-spacing="12" fill="url(#red)" stroke="url(#gold)" stroke-width="4" paint-order="stroke">UZ</text>
 </svg>
