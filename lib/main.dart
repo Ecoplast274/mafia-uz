@@ -2468,4 +2468,3 @@ class _GamePageState extends State<GamePage> {
     final winTxt = winner == 'Mafiya' ? t('mafiaWin') : t('citizenWin');
     return ListView(padding: const EdgeInsets.all(16), children: [
       const SizedBox(height: 48),
-      Center(
