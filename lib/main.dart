@@ -1418,50 +1418,50 @@ class _GamePageState extends State<GamePage> {
     final n = players.length;
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final h = math.min(w * .95, 560.0);
-      final rx = math.max(w * .37, 150.0);
-      final ry = math.max(h * .34, 145.0);
+      final h = math.min(w * .78, 520.0);
+      final rx = math.max(w * .40, 155.0);
+      final ry = math.max(h * .40, 145.0);
+
       Offset pos(int i) {
-        final a = -math.pi / 2 + 2 * math.pi * i / n;
-        return Offset(w / 2 + math.cos(a) * rx, h / 2 + math.sin(a) * ry);
+        final angle = -math.pi / 2 + 2 * math.pi * i / n;
+        return Offset(
+          w / 2 + math.cos(angle) * rx,
+          h / 2 + math.sin(angle) * ry,
+        );
       }
-      return SizedBox(width: w, height: h, child: Stack(clipBehavior: Clip.none, children: [
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF160D09),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: const Color(0xFF5A3218), width: 2),
+
+      return SizedBox(
+        width: w,
+        height: h,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(34),
+                child: SvgPicture.asset(
+                  'assets/cheers_table.svg',
+                  fit: BoxFit.fill,
+                  alignment: Alignment.center,
+                  semanticsLabel: 'CHEERS reklama stol yuzasida',
+                ),
+              ),
             ),
-          ),
+            for (var i = 0; i < n; i++)
+              Positioned(
+                left: pos(i).dx - 40,
+                top: pos(i).dy - 42,
+                width: 80,
+                child: _seat(
+                  i,
+                  n > 10 ? 42 : 48,
+                  players[i] == speaker,
+                  roles,
+                ),
+              ),
+          ],
         ),
-        Center(
-          child: Container(
-            width: math.min(w * .76, 620),
-            height: math.min(h * .48, 260),
-            decoration: BoxDecoration(
-              color: const Color(0xFF063554),
-              borderRadius: BorderRadius.circular(150),
-              border: Border.all(color: const Color(0xFFC7893B), width: 8),
-              boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 28, spreadRadius: 5)],
-            ),
-            child: Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text('MAFIA', style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: 5)),
-                const SizedBox(height: 4),
-                Text(stage == Stage.night ? 'TUN' : 'KUN', style: const TextStyle(color: Color(0xFFFFC857), fontWeight: FontWeight.w900, letterSpacing: 2)),
-              ]),
-            ),
-          ),
-        ),
-        for (var i = 0; i < n; i++)
-          Positioned(
-            left: pos(i).dx - 40,
-            top: pos(i).dy - 42,
-            width: 80,
-            child: _seat(i, n > 10 ? 42 : 48, players[i] == speaker, roles),
-          ),
-      ]));
+      );
     });
   }
 
