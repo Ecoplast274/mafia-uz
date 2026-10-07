@@ -1437,13 +1437,34 @@ class _GamePageState extends State<GamePage> {
           clipBehavior: Clip.none,
           children: [
             Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(34),
-                child: SvgPicture.asset(
-                  'assets/cheers_table.svg',
-                  fit: BoxFit.fill,
-                  alignment: Alignment.center,
-                  semanticsLabel: 'CHEERS reklama stol yuzasida',
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF160D09),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: const Color(0xFF5A3218), width: 2),
+                ),
+              ),
+            ),
+            Center(
+              child: Container(
+                width: math.min(w * .76, 620),
+                height: math.min(h * .48, 260),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF063554),
+                  borderRadius: BorderRadius.circular(150),
+                  border: Border.all(color: const Color(0xFFC7893B), width: 8),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black87, blurRadius: 28, spreadRadius: 5),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(140),
+                  child: Image.asset(
+                    'assets/cheers_overlay.webp',
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.high,
+                    semanticLabel: 'CHEERS reklama stol ustida',
+                  ),
                 ),
               ),
             ),
