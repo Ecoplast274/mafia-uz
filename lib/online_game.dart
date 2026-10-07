@@ -497,7 +497,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(110),
             child: SvgPicture.asset(
-              'assets/cheers_table.svg',
+              'assets/mafia_room_cheers.svg',
               fit: BoxFit.fill,
               alignment: Alignment.center,
             ),
