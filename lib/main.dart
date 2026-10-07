@@ -1352,65 +1352,144 @@ class _GamePageState extends State<GamePage> {
   Widget _seat(int i, double av, bool speaking, bool roles) {
     final p = players[i];
     final base = avatarColors[i % avatarColors.length];
+    final aliveColor = p.alive ? base : Colors.grey;
+    final nameSize = (av * .20).clamp(8.0, 11.0);
+    final badge = (av * .34).clamp(16.0, 22.0);
+    final micSize = (av * .30).clamp(10.0, 15.0);
+
     return SizedBox(
-      width: av + 32,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Stack(clipBehavior: Clip.none, children: [
+      width: av + 28,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
           Container(
-            width: av, height: av, alignment: Alignment.center,
+            padding: EdgeInsets.all((av * .055).clamp(2.0, 4.0)),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-                colors: p.alive
-                    ? [base.withAlpha(235), Colors.black.withAlpha(210)]
-                    : [Colors.grey.shade800, Colors.black],
-              ),
+              borderRadius: BorderRadius.circular((av * .24).clamp(10.0, 16.0)),
+              color: Colors.black.withAlpha(150),
               border: Border.all(
-                color: speaking ? Colors.amber : Colors.white24,
-                width: speaking ? 3.5 : 1.8),
-              boxShadow: speaking
-                  ? [BoxShadow(color: Colors.amber.withAlpha(150),
-                      blurRadius: 16, spreadRadius: 2)]
-                  : null,
+                color: speaking
+                    ? const Color(0xFFFFC857)
+                    : Colors.white.withAlpha(28),
+                width: speaking ? 2.2 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: speaking
+                      ? const Color(0xFFFFC857).withAlpha(95)
+                      : Colors.black.withAlpha(110),
+                  blurRadius: speaking ? 14 : 7,
+                  spreadRadius: speaking ? 1 : 0,
+                ),
+              ],
             ),
-            child: p.alive
-                ? Text(ini(p.name),
-                    style: TextStyle(fontSize: av * .38,
-                        fontWeight: FontWeight.w900))
-                : Icon(Icons.close, color: Colors.white38, size: av * .5),
-          ),
-          Positioned(
-            left: -3, top: -3,
-            child: Container(
-              width: 22, height: 22, alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle, color: Color(0xFF05060B)),
-              child: Text('${i + 1}',
-                  style: const TextStyle(fontSize: 10,
-                      fontWeight: FontWeight.w900)),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: av,
+                  height: av,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: p.alive
+                          ? [aliveColor.withAlpha(245), Colors.black.withAlpha(220)]
+                          : [Colors.grey.shade800, Colors.black],
+                    ),
+                    border: Border.all(
+                      color: speaking
+                          ? const Color(0xFFFFD76A)
+                          : Colors.white.withAlpha(45),
+                      width: speaking ? 2.5 : 1.2,
+                    ),
+                  ),
+                  child: p.alive
+                      ? Text(
+                          ini(p.name),
+                          style: TextStyle(
+                            fontSize: av * .36,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          Icons.close_rounded,
+                          color: Colors.white38,
+                          size: av * .46,
+                        ),
+                ),
+                Positioned(
+                  left: -4,
+                  top: -4,
+                  child: Container(
+                    width: badge,
+                    height: badge,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF070A14),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(
+                      '${i + 1}',
+                      style: TextStyle(
+                        fontSize: (badge * .43).clamp(7.0, 10.0),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -4,
+                  bottom: -4,
+                  child: Container(
+                    width: badge,
+                    height: badge,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: speaking
+                          ? const Color(0xFFFFC857)
+                          : const Color(0xFF080A10),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Icon(
+                      speaking ? Icons.mic : Icons.mic_none,
+                      size: micSize,
+                      color: speaking ? Colors.black : Colors.white70,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          Positioned(
-            right: -3, bottom: -3,
-            child: Container(
-              width: 21, height: 21,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: speaking ? Colors.amber : Colors.black87),
-              child: Icon(speaking ? Icons.mic : Icons.mic_none,
-                  size: 13,
-                  color: speaking ? Colors.black : Colors.white70),
+          const SizedBox(height: 3),
+          Container(
+            constraints: BoxConstraints(maxWidth: av + 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: (av * .08).clamp(2.0, 5.0),
+              vertical: 2,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(155),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              p.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: nameSize,
+                fontWeight: speaking ? FontWeight.w800 : FontWeight.w600,
+                color: p.alive ? Colors.white : Colors.white38,
+              ),
             ),
           ),
-        ]),
-        const SizedBox(height: 3),
-        Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11,
-                fontWeight: speaking ? FontWeight.w800 : FontWeight.w500,
-                color: p.alive ? Colors.white : Colors.white38)),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -1512,18 +1591,44 @@ class _GamePageState extends State<GamePage> {
   Widget _table({Player? speaker, bool roles = false}) {
     final n = players.length;
     if (n == 0) return const SizedBox.shrink();
+
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final h = math.min(w * .82, 520.0);
-      final rx = math.max(w * .42, 155.0);
-      final ry = math.max(h * .32, 118.0);
+      final h = math.min(w * .86, 540.0);
+
+      // The centre is a protected advertising zone. Player seats are
+      // calculated around it rather than being allowed to consume it.
+      final adRx = math.min(w * .32, 260.0);
+      final adRy = math.min(h * .105, 72.0);
+      final seatAv = switch (n) {
+        <= 6 => math.min(58.0, w * .145),
+        <= 8 => math.min(54.0, w * .135),
+        <= 10 => math.min(48.0, w * .12),
+        <= 12 => math.min(44.0, w * .108),
+        _ => math.min(38.0, w * .095),
+      };
+
+      final ringRx = math.max(w * .45, seatAv + adRx * .82);
+      final ringRy = math.max(h * .43, seatAv + adRy + 30);
 
       Offset pos(int i) {
         final angle = -math.pi / 2 + 2 * math.pi * i / n;
-        return Offset(
-          w / 2 + math.cos(angle) * rx,
-          h / 2 + math.sin(angle) * ry,
-        );
+        var x = ringRx * math.cos(angle);
+        var y = ringRy * math.sin(angle);
+
+        // Push any seat that gets too close to the ad ellipse outward.
+        final safeX = adRx + seatAv * .78;
+        final safeY = adRy + seatAv * .78;
+        final nx = x / safeX;
+        final ny = y / safeY;
+        final inside = (nx * nx) + (ny * ny);
+        if (inside < 1.0) {
+          final scale = 1.0 / math.sqrt(math.max(inside, .01));
+          x *= scale;
+          y *= scale;
+        }
+
+        return Offset(w / 2 + x, h / 2 + y);
       }
 
       return SizedBox(
@@ -1533,30 +1638,60 @@ class _GamePageState extends State<GamePage> {
           clipBehavior: Clip.none,
           children: [
             Positioned.fill(
-              child: SvgPicture.asset(
-                'assets/mafia_room_cheers.svg',
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black54,
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: SvgPicture.asset(
+                    'assets/mafia_room_cheers.svg',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                  ),
+                ),
               ),
             ),
+
+            // Permanent advertising safe-zone. Player seats never use this
+            // rectangle, even when the room grows to 15 players.
             Positioned(
-              left: w * .14,
-              right: w * .14,
-              top: h * .29,
-              bottom: h * .29,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: _cheersAd(w, h),
+              left: w * .12,
+              right: w * .12,
+              top: h * .35,
+              bottom: h * .35,
+              child: IgnorePointer(
+                child: Center(
+                  child: SizedBox(
+                    width: math.min(w * .68, 560),
+                    height: math.min(h * .30, 180),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(110),
+                      child: FittedBox(
+                        fit: BoxFit.contain,
+                        child: _cheersAd(w, h),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
+
             for (var i = 0; i < n; i++)
               Positioned(
-                left: pos(i).dx - 40,
-                top: pos(i).dy - 42,
-                width: 80,
+                left: pos(i).dx - (seatAv + 28) / 2,
+                top: pos(i).dy - (seatAv + 56) / 2,
+                width: seatAv + 28,
                 child: _seat(
                   i,
-                  n > 10 ? 42 : 48,
+                  seatAv,
                   players[i] == speaker,
                   roles,
                 ),
