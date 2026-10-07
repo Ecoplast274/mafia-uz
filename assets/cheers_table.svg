@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720">
+<defs>
+<radialGradient id="felt"><stop stop-color="#1676aa"/><stop offset=".6" stop-color="#075080"/><stop offset="1" stop-color="#032d4b"/></radialGradient>
+<linearGradient id="wood"><stop stop-color="#d49a42"/><stop offset=".22" stop-color="#6e3518"/><stop offset=".5" stop-color="#2a1109"/><stop offset=".78" stop-color="#8c4b20"/><stop offset="1" stop-color="#d19a45"/></linearGradient>
+<linearGradient id="bag"><stop stop-color="#118bd0"/><stop offset=".55" stop-color="#0871b7"/><stop offset="1" stop-color="#07518b"/></linearGradient>
+<filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-opacity=".65"/></filter>
+</defs>
+<rect width="1200" height="720" rx="40" fill="#1a0b07"/>
+<ellipse cx="600" cy="370" rx="570" ry="320" fill="url(#wood)" stroke="#e0a84d" stroke-width="7" filter="url(#shadow)"/>
+<ellipse cx="600" cy="365" rx="535" ry="285" fill="#241008" stroke="#5b2c13" stroke-width="12"/>
+<ellipse cx="600" cy="360" rx="505" ry="255" fill="url(#felt)" stroke="#b87831" stroke-width="7"/>
+<g fill="#ffd36a" stroke="#9b6124" stroke-width="3"><circle cx="155" cy="290" r="18"/><circle cx="1045" cy="290" r="18"/><circle cx="155" cy="440" r="18"/><circle cx="1045" cy="440" r="18"/><circle cx="600" cy="122" r="18"/><circle cx="600" cy="598" r="18"/></g>
+
+<!-- cheese pieces and onion -->
+<g fill="#f1b63e" stroke="#9d6923" stroke-width="3">
+<path d="M185 365l42-42 48 20-10 56-53 8z"/><circle cx="215" cy="350" r="5" fill="#d18c28"/><circle cx="245" cy="370" r="5" fill="#d18c28"/>
+<path d="M250 505l48-35 48 24-25 51-55 3z"/><path d="M875 505l48-35 48 24-25 51-55 3z"/>
+<path d="M915 300l48-28 42 35-22 48-55-4z"/>
+</g>
+<g stroke="#75bb48" stroke-width="10" stroke-linecap="round"><path d="M250 535l-40 40"/><path d="M270 540l-35 48"/><path d="M295 535l-25 52"/></g>
+<g fill="#69b942"><circle cx="305" cy="475" r="6"/><circle cx="330" cy="490" r="6"/><circle cx="350" cy="470" r="6"/><circle cx="820" cy="500" r="6"/><circle cx="845" cy="480" r="6"/></g>
+
+<!-- CHEERS logo -->
+<g transform="translate(355 235) rotate(-8)" filter="url(#shadow)">
+<text x="245" y="130" text-anchor="middle" font-family="Arial,sans-serif" font-size="112" font-weight="900" font-style="italic" fill="#fff" stroke="#8b101a" stroke-width="24" paint-order="stroke">CHEERS</text>
+<path d="M95 157 Q245 225 395 157 Q345 214 245 222 Q145 214 95 157Z" fill="#ffcc39" stroke="#8b101a" stroke-width="9"/>
+</g>
+
+<!-- gym mascot -->
+<g transform="translate(205 105)">
+<circle cx="90" cy="68" r="46" fill="#f1a92f"/><path d="M48 80h84v34H48z" fill="#f1a92f"/>
+<circle cx="75" cy="62" r="6" fill="#27313a"/><circle cx="105" cy="62" r="6" fill="#27313a"/>
+<path d="M50 78L5 35M130 78l45-43" stroke="#f1a92f" stroke-width="14" stroke-linecap="round"/>
+<path d="M0 35h180" stroke="#b8bec4" stroke-width="6"/>
+<path d="M10 22v26M170 22v26" stroke="#b8bec4" stroke-width="7"/>
+</g>
+
+<!-- product bag -->
+<g transform="translate(815 215) rotate(7)" filter="url(#shadow)">
+<path d="M0 0h230l-12 245H12z" fill="url(#bag)" stroke="#7bc7f0" stroke-width="4"/>
+<path d="M0 25h230" stroke="#0b4f85" stroke-width="12"/>
+<text x="115" y="105" text-anchor="middle" font-family="Arial,sans-serif" font-size="58" font-weight="900" font-style="italic" fill="#fff" stroke="#283d61" stroke-width="8" paint-order="stroke">CHEERS</text>
+<text x="115" y="145" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#fff">SMETANA VA PIYOZ</text>
+<text x="115" y="55" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="900" fill="#fff">50% KAM YOG‘</text>
+<path d="M28 180 Q115 140 202 180 Q178 225 115 232 Q52 225 28 180Z" fill="#efe0b4"/>
+<path d="M55 190l-18 28M75 185l-15 38M175 188l20 30" stroke="#6db83e" stroke-width="7"/>
+</g>
+
+<!-- mascot on table -->
+<g transform="translate(710 500)">
+<ellipse cx="60" cy="38" rx="48" ry="36" fill="#f0a92e"/><circle cx="45" cy="30" r="6" fill="#25313a"/><circle cx="75" cy="30" r="6" fill="#25313a"/>
+<path d="M28 20Q60-15 92 20" fill="none" stroke="#8b5b25" stroke-width="8"/>
+<path d="M35 68l-18 28M82 68l18 28" stroke="#f0a92e" stroke-width="13" stroke-linecap="round"/>
+<path d="M15 95h25M82 95h25" stroke="#f4f4f4" stroke-width="9" stroke-linecap="round"/>
+</g>
+</svg>
