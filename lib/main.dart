@@ -1418,31 +1418,52 @@ class _GamePageState extends State<GamePage> {
     final n = players.length;
     return LayoutBuilder(builder: (context, c) {
       final w = c.maxWidth;
-      final h = math.min(w * .88, 520.0);
-      final seatW = n > 10 ? 68.0 : 76.0;
-      final seatH = 74.0;
-      final rx = math.max(w * .39, 160.0);
-      final ry = math.max(h * .36, 150.0);
-      Offset seatCenter(int i) {
-        final angle = -math.pi / 2 + (2 * math.pi * i / n);
-        return Offset(w / 2 + math.cos(angle) * rx, h / 2 + math.sin(angle) * ry);
+      final h = math.min(w * .95, 560.0);
+      final rx = math.max(w * .37, 150.0);
+      final ry = math.max(h * .34, 145.0);
+      Offset pos(int i) {
+        final a = -math.pi / 2 + 2 * math.pi * i / n;
+        return Offset(w / 2 + math.cos(a) * rx, h / 2 + math.sin(a) * ry);
       }
       return SizedBox(width: w, height: h, child: Stack(clipBehavior: Clip.none, children: [
-        Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(30), child: SvgPicture.asset('assets/mafia_room_cheers.svg', fit: BoxFit.cover))),
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF160D09),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: const Color(0xFF5A3218), width: 2),
+            ),
+          ),
+        ),
+        Center(
+          child: Container(
+            width: math.min(w * .76, 620),
+            height: math.min(h * .48, 260),
+            decoration: BoxDecoration(
+              color: const Color(0xFF063554),
+              borderRadius: BorderRadius.circular(150),
+              border: Border.all(color: const Color(0xFFC7893B), width: 8),
+              boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 28, spreadRadius: 5)],
+            ),
+            child: Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('MAFIA', style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: 5)),
+                const SizedBox(height: 4),
+                Text(stage == Stage.night ? 'TUN' : 'KUN', style: const TextStyle(color: Color(0xFFFFC857), fontWeight: FontWeight.w900, letterSpacing: 2)),
+              ]),
+            ),
+          ),
+        ),
         for (var i = 0; i < n; i++)
-          Positioned(left: seatCenter(i).dx - seatW / 2, top: seatCenter(i).dy - seatH / 2, width: seatW,
-            child: _seat(i, n > 10 ? 40 : 46, players[i] == speaker, roles)),
-        Positioned(top: 10, left: 14, child: _roomPill(Icons.groups, '${players.length}/${room}')),
-        Positioned(top: 10, right: 14, child: _roomPill(stage == Stage.night ? Icons.nightlight_round : Icons.wb_sunny, stage == Stage.night ? 'TUN' : 'KUN')),
+          Positioned(
+            left: pos(i).dx - 40,
+            top: pos(i).dy - 42,
+            width: 80,
+            child: _seat(i, n > 10 ? 42 : 48, players[i] == speaker, roles),
+          ),
       ]));
     });
   }
-
-  Widget _roomPill(IconData icon, String label) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(color: const Color(0xDD05070D), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white24), boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 10)]),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 16, color: _gold), const SizedBox(width: 6), Text(label, style: const TextStyle(fontWeight: FontWeight.w900))]),
-  );
 
   Widget _tableChipRow({bool reverse = false}) => Row(
         mainAxisSize: MainAxisSize.min,
@@ -1969,147 +1990,127 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _setup() => ListView(padding: const EdgeInsets.fromLTRB(16, 14, 16, 28), children: [
-        const SizedBox(height: 18),
-        _card(
-          color: _gold,
-          pad: const EdgeInsets.fromLTRB(18, 22, 18, 20),
-          child: Column(
-            children: [
-              _hero(Icons.theater_comedy, _gold, size: 62),
-              const SizedBox(height: 14),
-              Text(
-                t('appTitle'),
-                textAlign: TextAlign.center,
-                style: _big?.copyWith(
-                  letterSpacing: 9,
-                  fontSize: 34,
-                  shadows: const [
-                    Shadow(
-                      color: Colors.black54,
-                      blurRadius: 14,
-                      offset: Offset(0, 3),
+  Widget _setup() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B0807),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+              child: Row(
+                children: [
+                  const Text('MAFIA', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                  const Spacer(),
+                  IconButton(onPressed: _openSettings, icon: const Icon(Icons.settings_outlined)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF17110D),
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: const Color(0xFF6B421F)),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                t('subtitle'),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  letterSpacing: 0.4,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        _onlineCard(),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _openGameInfo,
-          icon: const Icon(Icons.menu_book),
-          label: const Text('O‘yin qoidalari, rollar va ma’lumotlar'),
-        ),
-        const SizedBox(height: 12),
-        Row(children: [
-          _roomCard(8, t('roomOddiy'), Icons.groups),
-          _roomCard(12, t('roomPro'), Icons.workspace_premium),
-        ]),
-        const SizedBox(height: 14),
-        _card(
-          pad: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          color: Colors.redAccent,
-          child: Row(
-            children: [
-              const Icon(Icons.nightlife, color: Colors.redAccent),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '${names.length} / $room  •  ${t('players')}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              Icon(
-                names.length == room ? Icons.check_circle : Icons.groups,
-                color: names.length == room ? Colors.greenAccent : Colors.white54,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Row(children: [
-          Expanded(
-            child: TextField(
-              controller: ctrl,
-              onSubmitted: (_) => _add(),
-              decoration: InputDecoration(
-                hintText: t('nameHint'),
-                filled: true,
-                fillColor: Colors.white12,
-                prefixIcon: const Icon(Icons.person_add),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.local_fire_department, size: 58, color: Color(0xFFFFB52E)),
+                        const SizedBox(height: 10),
+                        const Text('MAFIA UZ', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 3)),
+                        const SizedBox(height: 6),
+                        const Text('Do‘stlaringiz bilan haqiqiy Mafia', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _newSectionTitle('O‘yin turi'),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(child: _newModeCard(8, 'ODDIY', Icons.groups)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _newModeCard(12, 'PRO', Icons.workspace_premium)),
+                  ]),
+                  const SizedBox(height: 14),
+                  _onlineCard(),
+                  const SizedBox(height: 14),
+                  _newSectionTitle('O‘yinchilar'),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: const Color(0xFF17110D), borderRadius: BorderRadius.circular(18)),
+                    child: Row(children: [
+                      Expanded(child: Text('${names.length} / $room o‘yinchi', style: const TextStyle(fontWeight: FontWeight.w800))),
+                      TextButton(onPressed: _fill, child: const Text('DEMO')),
+                    ]),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(child: TextField(
+                      controller: ctrl,
+                      onSubmitted: (_) => _add(),
+                      decoration: InputDecoration(
+                        hintText: 'O‘yinchi nomi',
+                        filled: true,
+                        fillColor: const Color(0xFF17110D),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      ),
+                    )),
+                    const SizedBox(width: 8),
+                    IconButton.filled(onPressed: names.length < room ? _add : null, icon: const Icon(Icons.add)),
+                  ]),
+                  const SizedBox(height: 8),
+                  for (var i = 0; i < names.length; i++)
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      leading: CircleAvatar(backgroundColor: avatarColors[i % avatarColors.length], child: Text('${i + 1}')),
+                      title: Text(names[i]),
+                      trailing: IconButton(onPressed: () => setState(() => names.removeAt(i)), icon: const Icon(Icons.close)),
+                    ),
+                  const SizedBox(height: 10),
+                  FilledButton(
+                    onPressed: names.length == room ? _start : null,
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56), backgroundColor: const Color(0xFFFF3D5A)),
+                    child: const Text('O‘YINNI BOSHLASH', style: TextStyle(fontWeight: FontWeight.w900)),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(onPressed: _openGameInfo, child: const Text('Qoidalar va rollar')),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filled(
-              onPressed: names.length < room ? _add : null,
-              icon: const Icon(Icons.add)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _newSectionTitle(String text) => Text(text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.white70));
+
+  Widget _newModeCard(int size, String label, IconData icon) {
+    final active = room == size;
+    return InkWell(
+      onTap: () => setState(() { room = size; if (names.length > size) names.removeRange(size, names.length); }),
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFF3A2112) : const Color(0xFF17110D),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: active ? const Color(0xFFFFB52E) : Colors.white10, width: 1.5),
+        ),
+        child: Column(children: [
+          Icon(icon, color: active ? const Color(0xFFFFB52E) : Colors.white70, size: 30),
+          const SizedBox(height: 7),
+          Text('$size KISHI', style: const TextStyle(fontWeight: FontWeight.w900)),
+          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
         ]),
-        const SizedBox(height: 12),
-        for (var i = 0; i < names.length; i++)
-          _card(
-            pad: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(children: [
-              CircleAvatar(
-                backgroundColor: avatarColors[i % avatarColors.length],
-                child: Text('${i + 1}'),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: Text(names[i], style: const TextStyle(fontSize: 18))),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => setState(() => names.removeAt(i)),
-              ),
-            ]),
-          ),
-        const SizedBox(height: 8),
-        Center(
-          child: Text(
-            '${names.length} / $room',
-            style: TextStyle(
-              color: names.length == room ? Colors.greenAccent : Colors.white70,
-            ),
-          ),
-        ),
-        TextButton(
-          onPressed: _fill,
-          child: Text(t('fillDemo')),
-        ),
-        _btn(t('startGame'), names.length == room ? _start : null),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _openOnlineRoom,
-          icon: Icon(
-            online.initialized ? Icons.cloud_done : Icons.cloud_off,
-            color: online.initialized ? _cyan : Colors.white54,
-          ),
-          label: Text(
-            online.initialized
-                ? 'ONLINE XONA'
-                : 'ONLINE XONA (CONFIG KUTILMOQDA)',
-          ),
-        ),
-      ]);
+      ),
+    );
+  }
 
   Widget _reveal() {
     final p = players[revealIndex];
