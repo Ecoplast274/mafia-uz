@@ -2019,17 +2019,6 @@ class _GamePageState extends State<GamePage> {
             children: [
               _mafiaLogo(size: 150),
               const SizedBox(height: 14),
-              Text(
-                t('appTitle'),
-                textAlign: TextAlign.center,
-                style: _big?.copyWith(
-                  letterSpacing: 9,
-                  fontSize: 34,
-                  shadows: const [
-                    Shadow(color: Colors.black54, blurRadius: 14, offset: Offset(0, 3)),
-                  ],
-                ),
-              ),
               const SizedBox(height: 6),
               Text(
                 t('subtitle'),
