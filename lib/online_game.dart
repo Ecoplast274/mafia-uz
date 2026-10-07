@@ -489,7 +489,20 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
         return Offset(w / 2 + math.cos(angle) * rx, h / 2 + math.sin(angle) * ry);
       }
       return SizedBox(width: w, height: h, child: Stack(clipBehavior: Clip.none, children: [
-        Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(30), child: SvgPicture.asset('assets/mafia_room_cheers.svg', fit: BoxFit.cover))),
+        Positioned(
+          left: w * .035,
+          right: w * .035,
+          top: h * .16,
+          bottom: h * .16,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(110),
+            child: SvgPicture.asset(
+              'assets/cheers_table.svg',
+              fit: BoxFit.fill,
+              alignment: Alignment.center,
+            ),
+          ),
+        ),
         for (var i = 0; i < n; i++)
           Positioned(left: seatCenter(i).dx - 45, top: seatCenter(i).dy - 34, width: 90,
             child: _onlineSeat(docs[i], i, docs[i].id == me, target == docs[i].id)),
